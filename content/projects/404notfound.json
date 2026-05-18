@@ -1,0 +1,13 @@
+{
+  "title": "404 Not Found 离线鱼人",
+  "slug": "404notfound",
+  "date": "2026-05-10",
+  "summary": "一个 Chrome 离线页风格的 404 互动小游戏：断网时自动出现，恢复网络后回到主站。",
+  "tags": ["404", "小游戏", "离线体验"],
+  "category": "projects",
+  "cover": "/assets/blog/404notfound-offline-fishman-cover.png",
+  "href": "/404notfound/",
+  "eyebrow": "Vibe Coding / 003",
+  "actionLabel": "打开离线页",
+  "body": ["把错误页做成可玩的站点边角体验。"]
+}

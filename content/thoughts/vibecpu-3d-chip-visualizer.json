@@ -1,0 +1,15 @@
+{
+  "title": "Vibe Coding 4：VibeCPU 3D 芯片结构可视化上线",
+  "slug": "vibecpu-3d-chip-visualizer",
+  "date": "2026-05-10",
+  "summary": "一个可旋转、可拆解、带行业观察的 3D 半导体科普项目：用 CPU、GPU、HBM 和封装结构理解芯片如何工作。",
+  "tags": ["Three.js", "半导体", "3D 可视化"],
+  "category": "thoughts",
+  "cover": "/vibecpu/assets/blog-vibecpu-cover.png",
+  "body": [
+    "[image:/vibecpu/assets/blog-vibecpu-cover.png|VibeCPU 3D 芯片结构可视化配图]",
+    "VibeCPU 是 4399123.com 的第四个 Vibe Coding 项目。它把 CPU、GPU、HBM、硅中介层、封装和散热路径做成一个可以旋转、拆解、聚焦的 3D 可视化模型。",
+    "普通人谈起芯片，往往只听过 CPU、GPU、显存这些词，却很难想象它们在一枚封装里怎样协作。VibeCPU 把芯片想象成一座压缩到指甲盖里的城市：上层负责散热，中层负责计算，底层负责供电、通信和连接外部世界。",
+    "项目还加入了 NVDA 与 AMD 的行业观察。把实时行情放进科普项目，是为了帮助用户把芯片结构、公司战略和真实产业链连起来理解。"
+  ]
+}

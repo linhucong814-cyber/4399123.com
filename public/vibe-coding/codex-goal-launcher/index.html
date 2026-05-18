@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>把想法变成 Codex 指令</title>
+  <meta name="description" content="Vibe Coding 启动器：把模糊想法整理成可直接粘贴到 Codex 运行的 /goal 指令。">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="ambient ambient-a"></div>
+  <div class="ambient ambient-b"></div>
+
+  <header class="site-header reveal">
+    <a class="brand" href="#top" aria-label="回到顶部">
+      <span class="brand-mark">VC</span>
+      <span>Vibe Coding Launcher</span>
+    </a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="/">4399123.com</a>
+      <a href="#builder">Builder</a>
+      <a href="#result">Result</a>
+      <a href="#examples">Examples</a>
+      <a href="#how">How it works</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero shell reveal" aria-labelledby="hero-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Codex Goal Generator</p>
+        <h1 id="hero-title"><span>把想法变成</span><span>Codex 指令</span></h1>
+        <p class="hero-subtitle">
+          一个 Vibe Coding 启动器，帮助你把模糊想法整理成结构清晰、可执行、可以直接粘贴到 Codex 中运行的 AI 编程任务。
+        </p>
+
+        <label class="idea-card glass" for="idea-input">
+          <span>你的项目想法</span>
+          <textarea id="idea-input" rows="5" placeholder="我想做一个帮助我记录健身计划的网页"></textarea>
+        </label>
+
+        <div class="hero-actions">
+          <button class="button primary" type="button" id="hero-generate">把想法变成 Codex 指令</button>
+          <a class="button secondary" href="#examples">查看示例模板</a>
+        </div>
+      </div>
+
+      <aside class="code-panel glass" aria-label="生成指令预览">
+        <div class="window-dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <pre class="code-preview"><code><span class="code-dim">/goal</span>
+请在当前目录实现一个完整网页项目。
+
+用户目标：
+把模糊想法变成可运行产品。
+
+技术要求：
+- 原生 HTML / CSS / JavaScript
+- 响应式适配桌面和手机
+
+<span class="code-accent">完成后检查运行状态并给出访问地址</span></code></pre>
+        <div class="panel-metrics" aria-hidden="true">
+          <span>Prompt</span>
+          <span>Plan</span>
+          <span>Build</span>
+        </div>
+      </aside>
+    </section>
+
+    <section id="builder" class="section shell reveal">
+      <div class="section-heading">
+        <p class="eyebrow">Builder</p>
+        <h2>选择项目配置</h2>
+      </div>
+
+      <div class="builder-grid">
+        <section class="builder-panel glass">
+          <div class="option-group">
+            <h3>项目类型</h3>
+            <div class="option-list" data-group="type">
+              <label class="option-pill"><input type="radio" name="project-type" value="网页应用" checked>网页应用</label>
+              <label class="option-pill"><input type="radio" name="project-type" value="小工具">小工具</label>
+              <label class="option-pill"><input type="radio" name="project-type" value="小游戏">小游戏</label>
+              <label class="option-pill"><input type="radio" name="project-type" value="落地页">落地页</label>
+              <label class="option-pill"><input type="radio" name="project-type" value="管理后台">管理后台</label>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <h3>视觉风格</h3>
+            <div class="option-list" data-group="style">
+              <label class="option-pill"><input type="radio" name="visual-style" value="科技感" checked>科技感</label>
+              <label class="option-pill"><input type="radio" name="visual-style" value="极简">极简</label>
+              <label class="option-pill"><input type="radio" name="visual-style" value="可爱">可爱</label>
+              <label class="option-pill"><input type="radio" name="visual-style" value="商务">商务</label>
+              <label class="option-pill"><input type="radio" name="visual-style" value="复古">复古</label>
+            </div>
+          </div>
+
+          <div class="option-group">
+            <h3>需要的功能</h3>
+            <div class="option-list" data-group="features">
+              <label class="option-pill"><input type="checkbox" name="feature" value="响应式" checked>响应式</label>
+              <label class="option-pill"><input type="checkbox" name="feature" value="本地保存">本地保存</label>
+              <label class="option-pill"><input type="checkbox" name="feature" value="动画效果" checked>动画效果</label>
+              <label class="option-pill"><input type="checkbox" name="feature" value="数据图表">数据图表</label>
+              <label class="option-pill"><input type="checkbox" name="feature" value="登录界面">登录界面</label>
+              <label class="option-pill"><input type="checkbox" name="feature" value="下载导出">下载导出</label>
+            </div>
+          </div>
+
+          <div class="config-summary" aria-live="polite">
+            <p class="eyebrow">Current Config</p>
+            <div class="summary-line"><span>类型</span><strong id="summary-type">网页应用</strong></div>
+            <div class="summary-line"><span>风格</span><strong id="summary-style">科技感</strong></div>
+            <div class="summary-line summary-features"><span>功能</span><strong id="summary-features">响应式、动画效果</strong></div>
+          </div>
+        </section>
+
+        <section id="result" class="result-panel glass" aria-live="polite">
+          <div class="result-head">
+            <div>
+              <p class="eyebrow">Result</p>
+              <h2>生成后的 /goal 指令</h2>
+            </div>
+            <button class="button secondary copy-button" type="button" id="copy-goal">一键复制</button>
+          </div>
+          <div class="result-empty" id="result-empty">输入想法并点击按钮后，这里会展开一段完整的 Codex 指令。</div>
+          <pre class="goal-output" id="goal-output"></pre>
+        </section>
+      </div>
+    </section>
+
+    <section id="examples" class="section shell reveal">
+      <div class="section-heading">
+        <p class="eyebrow">Examples</p>
+        <h2>示例模板</h2>
+      </div>
+      <div class="example-grid">
+        <button class="template-card glass" type="button" data-template="todo">
+          <span>01</span>
+          <strong>做一个待办事项网页</strong>
+          <small>任务添加、完成状态、筛选和本地保存。</small>
+        </button>
+        <button class="template-card glass" type="button" data-template="timer">
+          <span>02</span>
+          <strong>做一个番茄钟小工具</strong>
+          <small>专注计时、休息提醒、声音提示和统计。</small>
+        </button>
+        <button class="template-card glass" type="button" data-template="portfolio">
+          <span>03</span>
+          <strong>做一个个人作品集落地页</strong>
+          <small>项目展示、个人介绍、联系入口和高级排版。</small>
+        </button>
+      </div>
+    </section>
+
+    <section id="how" class="section shell reveal">
+      <div class="section-heading">
+        <p class="eyebrow">How it works</p>
+        <h2>四步启动 Vibe Coding</h2>
+      </div>
+      <div class="steps-grid">
+        <article class="step-card glass"><span>01</span><h3>输入想法</h3><p>用自然语言描述你想做什么，不需要先写完整需求文档。</p></article>
+        <article class="step-card glass"><span>02</span><h3>生成指令</h3><p>把目标、技术、功能、视觉和检查要求自动整理成 /goal。</p></article>
+        <article class="step-card glass"><span>03</span><h3>粘贴到 Codex</h3><p>复制结果，直接交给 Codex 执行，减少反复解释成本。</p></article>
+        <article class="step-card glass"><span>04</span><h3>运行并迭代</h3><p>打开页面、反馈问题、继续打磨，让想法逐步变成作品。</p></article>
+      </div>
+    </section>
+
+    <section class="cta shell reveal">
+      <div class="cta-inner glass">
+        <p class="eyebrow">Start</p>
+        <h2>从一句想法开始，生成你的下一条 Codex 指令。</h2>
+        <a class="button primary" href="#top">开始一次 Vibe Coding</a>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite">已复制，可以粘贴到 Codex 运行</div>
+  <script src="script.js"></script>
+</body>
+</html>

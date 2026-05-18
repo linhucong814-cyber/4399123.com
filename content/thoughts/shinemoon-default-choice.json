@@ -1,0 +1,19 @@
+{
+  "title": "打破默认选项：让开发者拥有更多模型选择权",
+  "slug": "shinemoon-default-choice",
+  "date": "2026-05-13",
+  "summary": "不是替代谁，而是打破默认选项。当默认答案被打碎，新的选择才会出现。Shinemoon API 让开发者拥有更多模型选择权。",
+  "tags": ["Shinemoon API", "新月 API", "AI", "模型选择", "开发者"],
+  "category": "thoughts",
+  "cover": "/assets/blog/shinemoon-default-choice-after.png",
+  "body": [
+    "[image:/assets/blog/shinemoon-default-choice-before.png|默认答案成为唯一选项时，选择会被收窄]",
+    "不是替代谁，是打破默认选项。",
+    "当默认答案被打碎，新的选择才会出现。",
+    "[image:/assets/blog/shinemoon-default-choice-after.png|打破默认之后，更多模型选择重新出现]",
+    "对开发者来说，模型不应该只有一个入口、一种路径、一套固定答案。真正重要的是选择权：按任务选择模型，按成本选择模型，按速度、上下文、能力边界和产品节奏选择模型。",
+    "Shinemoon API 新月 API 想做的，就是把模型选择权还给开发者。不是制造另一个默认答案，而是让默认答案不再垄断开发者的想象力。",
+    "当你能在同一个接口里接入更多模型，产品实验会更快，成本控制会更灵活，团队也能把注意力放回真正的业务问题上。",
+    "shinemoon.com"
+  ]
+}

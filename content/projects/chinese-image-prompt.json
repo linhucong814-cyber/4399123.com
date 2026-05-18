@@ -1,0 +1,13 @@
+{
+  "title": "中文图像提示词生成器",
+  "slug": "chinese-image-prompt",
+  "date": "2026-05-12",
+  "summary": "一个中文 image 提示词随机生成工具，支持分类、参数锁定、重抽未锁定、收藏、历史记录和一键复制。",
+  "tags": ["vibe coding", "image", "提示词", "AI 绘图"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/chinese-image-prompt/",
+  "eyebrow": "Vibe Coding / 007",
+  "actionLabel": "打开提示词生成器",
+  "body": ["把主题、场景、风格、镜头、光线、材质和情绪拆成可锁定的中文参数，一键组合成可直接使用的 image 提示词。"]
+}

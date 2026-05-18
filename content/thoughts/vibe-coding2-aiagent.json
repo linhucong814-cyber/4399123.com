@@ -1,0 +1,15 @@
+{
+  "title": "Vibe Coding 2: 4399123 Agent AI 发布",
+  "slug": "vibe-coding2-aiagent",
+  "date": "2026-05-10",
+  "summary": "Vibe Coding 的第二个项目上线：一个带角色头像、思考动画和后台提示词配置的 Agent AI 对话体验。",
+  "tags": ["Agent", "AI 对话", "项目记录"],
+  "category": "thoughts",
+  "cover": "/assets/blog/vibe-coding2-aiagent-avatar.webp",
+  "body": [
+    "[image:/assets/blog/vibe-coding2-aiagent-avatar.webp|4399123 Agent AI 头像]",
+    "刚刚发布的 Vibe Coding 2 是 4399123 Agent AI：一个把虚拟角色、AI 对话和站点后台串起来的小型 Agent 项目。",
+    "这次的重点不是只做一个聊天框，而是让用户先选择角色，再进入对话。角色头像、思考动画和回复节奏会一起塑造一个更有陪伴感的交互入口。",
+    "项目后端负责模型代理、运行提示词和聊天记录保存，前端负责角色切换、消息流、加载状态和移动端体验。管理员也可以通过后台调整 Agent 的系统提示词，让上线后的性格和边界还能继续维护。"
+  ]
+}

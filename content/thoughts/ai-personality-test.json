@@ -1,0 +1,13 @@
+{
+  "title": "AI 协作人格测试入口开放",
+  "slug": "ai-personality-test",
+  "date": "2026-05-10",
+  "summary": "Vibe Coding 分支中的 AI 协作人格测试已经加入首页入口，可以直接进入体验。",
+  "tags": ["AI 实验", "协作方式"],
+  "category": "thoughts",
+  "cover": "/assets/personas/prompt-alchemist.jpg",
+  "body": [
+    "AI 协作人格测试用于帮助用户理解自己更适合的 AI 协作方式。",
+    "首页会继续作为项目集合入口，后续新增的测试、工具和交互页面也会按分支继续收纳。"
+  ]
+}

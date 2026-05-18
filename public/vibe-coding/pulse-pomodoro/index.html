@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse Pomodoro 番茄钟</title>
+  <meta name="description" content="一个科技感番茄钟小工具，可设置专注和休息时间，支持本地保存、提醒和统计。">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar" id="top">
+    <a class="brand" href="#timer" aria-label="回到计时器">
+      <span class="brand-mark">P</span>
+      <span>Pulse Pomodoro</span>
+    </a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="/">4399123.com</a>
+      <a href="#timer">计时</a>
+      <a href="#settings">设置</a>
+      <a href="#stats">统计</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="hero shell" id="timer" aria-labelledby="page-title">
+      <div class="hero-copy">
+        <p class="eyebrow">Focus Console</p>
+        <h1 id="page-title">专注、休息、循环推进。</h1>
+        <p class="lead">设置你的专注节奏，启动后自动切换专注与休息，并在每个阶段结束时给出声音和状态提醒。</p>
+      </div>
+
+      <section class="timer-panel glass" aria-label="番茄钟计时器">
+        <div class="mode-tabs" role="tablist" aria-label="计时模式">
+          <button class="mode-tab is-active" type="button" data-mode="focus">专注</button>
+          <button class="mode-tab" type="button" data-mode="shortBreak">短休息</button>
+          <button class="mode-tab" type="button" data-mode="longBreak">长休息</button>
+        </div>
+
+        <div class="dial-wrap" aria-live="polite">
+          <svg class="progress-ring" viewBox="0 0 240 240" aria-hidden="true">
+            <circle class="ring-track" cx="120" cy="120" r="104"></circle>
+            <circle class="ring-progress" cx="120" cy="120" r="104"></circle>
+          </svg>
+          <div class="time-core">
+            <span class="state-label" id="state-label">准备专注</span>
+            <strong id="time-display">25:00</strong>
+            <span id="cycle-label">第 1 轮 / 共 4 轮</span>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="button primary" id="start-pause" type="button">开始</button>
+          <button class="button secondary" id="reset" type="button">重置</button>
+          <button class="button secondary" id="skip" type="button">跳过</button>
+        </div>
+
+        <div class="status-strip" id="status-strip">设置时间后点击开始，当前配置会自动保存。</div>
+      </section>
+    </section>
+
+    <section class="workspace shell">
+      <section class="settings-panel glass" id="settings" aria-labelledby="settings-title">
+        <div class="section-head">
+          <p class="eyebrow">Settings</p>
+          <h2 id="settings-title">节奏设置</h2>
+        </div>
+
+        <div class="input-grid">
+          <label class="field">
+            <span>专注分钟</span>
+            <input id="focus-minutes" type="number" min="1" max="120" value="25">
+          </label>
+          <label class="field">
+            <span>短休息分钟</span>
+            <input id="short-minutes" type="number" min="1" max="60" value="5">
+          </label>
+          <label class="field">
+            <span>长休息分钟</span>
+            <input id="long-minutes" type="number" min="1" max="90" value="15">
+          </label>
+          <label class="field">
+            <span>每组轮数</span>
+            <input id="cycles" type="number" min="1" max="12" value="4">
+          </label>
+        </div>
+
+        <div class="toggle-row">
+          <label class="switch">
+            <input id="auto-start" type="checkbox">
+            <span></span>
+            自动进入下一阶段
+          </label>
+          <label class="switch">
+            <input id="sound-enabled" type="checkbox" checked>
+            <span></span>
+            完成时声音提醒
+          </label>
+        </div>
+      </section>
+
+      <section class="stats-panel glass" id="stats" aria-labelledby="stats-title">
+        <div class="section-head">
+          <p class="eyebrow">Stats</p>
+          <h2 id="stats-title">今日进度</h2>
+        </div>
+
+        <div class="stats-grid">
+          <article class="stat-card">
+            <span>完成专注</span>
+            <strong id="completed-focus">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>累计分钟</span>
+            <strong id="total-minutes">0</strong>
+          </article>
+          <article class="stat-card">
+            <span>当前阶段</span>
+            <strong id="current-mode">专注</strong>
+          </article>
+        </div>
+
+        <div class="next-panel">
+          <span>下一步</span>
+          <strong id="next-label">完成后进入短休息</strong>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "title": "Print Garden 3D 打印收获游戏",
+  "slug": "print-garden",
+  "date": "2026-05-16",
+  "summary": "一个网页 3D 打印机 Demo：在自由工作台编辑模型、磁吸对齐、虚拟打印、收获作品并放到展示台 360 度查看。",
+  "tags": ["Three.js", "3D 打印", "游戏原型"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/print-garden/",
+  "eyebrow": "Vibe Coding / 011",
+  "actionLabel": "打开 Print Garden",
+  "body": [
+    "把 3D 打印做成轻量收获游戏：设计、等待、收获、展示。",
+    "自由工作台支持几何体、手绘 3D 笔触、单零件尺寸位置颜色编辑和磁吸辅助线。"
+  ]
+}

@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.log
+*.sqlite3
+*.db
+__pycache__/
+.venv/
+backups/
+*.tar.gz
+*.zip

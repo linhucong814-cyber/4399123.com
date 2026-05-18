@@ -1,0 +1,13 @@
+{
+  "title": "Vibe Coding Launcher",
+  "slug": "codex-goal-launcher",
+  "date": "2026-05-12",
+  "summary": "把模糊想法整理成结构清晰、可直接粘贴到 Codex 运行的 /goal 指令生成器。",
+  "tags": ["Codex", "Prompt", "启动器"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/codex-goal-launcher/",
+  "eyebrow": "Vibe Coding / 005",
+  "actionLabel": "打开启动器",
+  "body": ["一个帮助把自然语言想法快速拉通成 Codex 可执行任务的小工具。"]
+}

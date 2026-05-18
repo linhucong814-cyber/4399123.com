@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="中文图像提示词生成器，支持分类、参数锁定、收藏、历史记录和一键复制。"
+    />
+    <meta name="theme-color" content="#f7f5ef" />
+    <title>中文图像提示词生成器</title>
+    <link rel="preconnect" href="https://images.unsplash.com" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <nav class="site-shortcut" aria-label="主站快捷入口">
+      <a href="/">4399123.com 主站</a>
+    </nav>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="提示词生成控制台">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div>
+            <p>中文图像提示词库</p>
+            <span>随机灵感收纳箱</span>
+          </div>
+        </div>
+
+        <section class="panel compact">
+          <div class="panel-heading">
+            <h2>生成方向</h2>
+            <button class="icon-button" id="shuffleCategory" type="button" title="随机方向" aria-label="随机方向">
+              ↻
+            </button>
+          </div>
+          <div class="chip-grid" id="categoryChips" role="group" aria-label="提示词分类"></div>
+        </section>
+
+        <section class="panel compact">
+          <div class="panel-heading">
+            <h2>参数</h2>
+            <button class="text-button ghost" id="resetLocks" type="button">解锁</button>
+          </div>
+          <label class="toggle-row" for="shuffleOrderToggle">
+            <span>随机排序</span>
+            <input id="shuffleOrderToggle" type="checkbox" checked />
+          </label>
+          <div class="control-list" id="controls"></div>
+        </section>
+      </aside>
+
+      <section class="workspace">
+        <header class="hero">
+          <div class="hero-copy">
+            <p class="eyebrow">中文提示词生成器</p>
+            <h1>一键拼出可直接投喂 image 模型的提示词</h1>
+            <p>从主题、风格、镜头、光线、构图、材质和情绪里随机组合；锁定的保持不动，未锁定的一键重抽并打乱。</p>
+          </div>
+          <div class="hero-visual" aria-hidden="true">
+            <img
+              src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=80"
+              width="900"
+              height="600"
+              decoding="async"
+              fetchpriority="high"
+              alt=""
+            />
+          </div>
+        </header>
+
+        <section class="prompt-board">
+          <div class="output-panel">
+            <div class="output-topline">
+              <div>
+                <span id="activeCategory">概念视觉</span>
+                <h2 id="promptTitle">准备生成</h2>
+              </div>
+              <div class="output-actions">
+                <button class="icon-button" id="favoriteBtn" type="button" title="收藏" aria-label="收藏">☆</button>
+                <button class="text-button" id="copyBtn" type="button">复制</button>
+              </div>
+            </div>
+            <textarea class="prompt-output" id="promptOutput" spellcheck="false">点击生成按钮，随机收纳一条 image 提示词。</textarea>
+            <div class="negative-row">
+              <span>反向提示</span>
+              <p id="negativeOutput">低质量、模糊、畸形结构、水印、乱码文字、杂乱构图</p>
+            </div>
+            <div class="button-row">
+              <button class="primary-button" id="generateBtn" type="button">一键打乱生成</button>
+              <button class="text-button" id="variationBtn" type="button">重抽未锁定</button>
+              <button class="text-button ghost" id="clearHistoryBtn" type="button">清空历史</button>
+            </div>
+          </div>
+
+          <div class="inspector">
+            <div class="preview-card" id="previewCard">
+              <div class="preview-label">视觉情绪</div>
+              <div class="preview-orbit"></div>
+              <div class="preview-caption" id="previewCaption">等待生成</div>
+            </div>
+            <div class="stats-grid">
+              <div>
+                <span id="historyCount">0</span>
+                <p>历史</p>
+              </div>
+              <div>
+                <span id="favoriteCount">0</span>
+                <p>收藏</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="library">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">提示词收纳</p>
+              <h2>提示词库</h2>
+            </div>
+            <label class="search-box">
+              <span>搜索</span>
+              <input id="searchInput" type="search" placeholder="人像、赛博、电影感..." />
+            </label>
+          </div>
+          <div class="tabs" role="tablist" aria-label="提示词列表视图">
+            <button class="tab active" type="button" data-view="history">历史记录</button>
+            <button class="tab" type="button" data-view="favorites">收藏夹</button>
+            <button class="tab" type="button" data-view="seeds">灵感种子</button>
+          </div>
+          <div class="prompt-list" id="promptList" aria-live="polite"></div>
+        </section>
+      </section>
+    </main>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

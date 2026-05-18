@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>4399123</title>
+    <link>https://4399123.com</link>
+    <description>4399123 是一个开放的 vibe coding 创作者社区基础设施，连接创作者、项目、想法和社区反馈。</description>
+    <language>zh-CN</language>
+    <lastBuildDate>Mon, 18 May 2026 03:17:28 GMT</lastBuildDate>
+    <atom:link href="https://4399123.com/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title><![CDATA[4399123 社区上线：把项目反馈和作品讨论放到同一个入口]]></title>
+      <link>https://4399123.com/blog/community-launch</link>
+      <guid>https://4399123.com/blog/community-launch</guid>
+      <pubDate>Sun, 17 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[4399123 社区入口已经开放，围绕 Vibe Coding、AI 工具、作品展示、需求反馈和站点建设，提供一个轻量讨论区。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[打破默认选项：让开发者拥有更多模型选择权]]></title>
+      <link>https://4399123.com/blog/shinemoon-default-choice</link>
+      <guid>https://4399123.com/blog/shinemoon-default-choice</guid>
+      <pubDate>Wed, 13 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[不是替代谁，而是打破默认选项。当默认答案被打碎，新的选择才会出现。Shinemoon API 让开发者拥有更多模型选择权。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[中文图像提示词生成器上线：把灵感拆成可锁定的参数]]></title>
+      <link>https://4399123.com/blog/chinese-image-prompt-generator</link>
+      <guid>https://4399123.com/blog/chinese-image-prompt-generator</guid>
+      <pubDate>Tue, 12 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[这次给 Vibe Coding 增加了一个中文 image 提示词生成器，用随机组合、参数锁定和历史收藏，把零散视觉灵感整理成可直接复制的提示词。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[AI 协作人格测试入口开放]]></title>
+      <link>https://4399123.com/blog/ai-personality-test</link>
+      <guid>https://4399123.com/blog/ai-personality-test</guid>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[Vibe Coding 分支中的 AI 协作人格测试已经加入首页入口，可以直接进入体验。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[Vibe Coding 2: 4399123 Agent AI 发布]]></title>
+      <link>https://4399123.com/blog/vibe-coding2-aiagent</link>
+      <guid>https://4399123.com/blog/vibe-coding2-aiagent</guid>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[Vibe Coding 的第二个项目上线：一个带角色头像、思考动画和后台提示词配置的 Agent AI 对话体验。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[Vibe Coding 4：VibeCPU 3D 芯片结构可视化上线]]></title>
+      <link>https://4399123.com/blog/vibecpu-3d-chip-visualizer</link>
+      <guid>https://4399123.com/blog/vibecpu-3d-chip-visualizer</guid>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[一个可旋转、可拆解、带行业观察的 3D 半导体科普项目：用 CPU、GPU、HBM 和封装结构理解芯片如何工作。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[4399123 最新动态上线]]></title>
+      <link>https://4399123.com/blog/welcome-4399123</link>
+      <guid>https://4399123.com/blog/welcome-4399123</guid>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[这里会持续记录站点更新、Vibe Coding 项目进展，以及后续新增工具的发布信息。]]></description>
+    </item>
+    <item>
+      <title><![CDATA[把小想法尽快变成可以点开的东西]]></title>
+      <link>https://4399123.com/blog/vibe-coding-notes</link>
+      <guid>https://4399123.com/blog/vibe-coding-notes</guid>
+      <pubDate>Sun, 10 May 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[Vibe coding 的价值不只是快，而是用很短的反馈回路判断一个想法有没有生命力。]]></description>
+    </item>
+  </channel>
+</rss>

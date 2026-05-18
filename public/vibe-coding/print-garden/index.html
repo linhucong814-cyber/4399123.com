@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Print Garden - 3D 打印收获游戏 Demo</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#studio" aria-label="Print Garden 首页">
+          <span class="brand-mark"></span>
+          <span>Print Garden</span>
+        </a>
+        <div class="top-actions">
+          <a class="site-link" href="/" aria-label="访问 4399123.com 主站">4399123.com</a>
+          <nav class="nav" aria-label="游戏区域">
+            <a href="#studio">工作台</a>
+            <a href="#production">打印与展示</a>
+            <a href="#collection">收藏墙</a>
+          </nav>
+        </div>
+      </header>
+
+      <main class="game-pages">
+        <section class="workbench panel studio-page" id="studio" aria-label="3D 打印工作台">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">低门槛建模</p>
+              <h1>捏一个作品，交给打印机慢慢长出来</h1>
+            </div>
+            <div class="level-pill">
+              <span>工坊等级</span>
+              <b id="levelLabel">1</b>
+            </div>
+          </div>
+
+          <div class="preview-wrap">
+            <canvas id="workbenchCanvas" aria-label="作品编辑预览"></canvas>
+            <div class="floating-card print-card">
+              <span>预计打印</span>
+              <strong id="estimateLabel">00:18</strong>
+            </div>
+          </div>
+
+          <div class="editor-controls" aria-label="作品编辑控件">
+            <div class="control-group shape-control">
+              <label>作品类型</label>
+              <div class="segmented" id="shapeControls">
+                <button class="active" data-shape="planter">花盆</button>
+                <button data-shape="bot">小机器人</button>
+                <button data-shape="vase">花瓶</button>
+                <button data-shape="rocket">火箭</button>
+                <button data-shape="custom">自由创作</button>
+              </div>
+            </div>
+
+            <div class="custom-editor" id="customEditor" hidden>
+              <div class="control-group primitive-control">
+                <label>添加几何</label>
+                <div class="tool-grid" id="primitiveControls">
+                  <button data-primitive="box">方块</button>
+                  <button data-primitive="sphere">球体</button>
+                  <button data-primitive="cylinder">圆柱</button>
+                  <button data-primitive="cone">圆锥</button>
+                  <button data-primitive="torus">圆环</button>
+                  <button data-preset="spongeBuddy">海绵小伙伴</button>
+                </div>
+              </div>
+
+              <div class="control-group tool-control">
+                <label>编辑工具</label>
+                <div class="tool-grid" id="toolControls">
+                  <button class="active" data-tool="select">选择</button>
+                  <button data-tool="draw">自由画线</button>
+                  <button data-transform="translate">移动</button>
+                  <button data-transform="rotate">旋转</button>
+                  <button data-transform="scale">缩放</button>
+                  <button id="deletePartBtn" type="button">删除零件</button>
+                </div>
+                <p class="helper-text" id="editorHint">点击零件选中；切换移动、旋转、缩放来调整。</p>
+              </div>
+
+              <div class="control-group quick-control">
+                <label>快速创作</label>
+                <div class="tool-grid" id="quickControls">
+                  <button data-quick="surprise">随机生成</button>
+                  <button data-quick="duplicate">复制选中</button>
+                  <button data-quick="mirror">镜像选中</button>
+                  <button data-quick="clear">清空画布</button>
+                </div>
+              </div>
+
+              <div class="part-inspector" id="partInspector">
+                <div class="inspector-head">
+                  <label>零件参数</label>
+                  <span id="selectedPartLabel">未选中</span>
+                </div>
+                <div class="selected-scale-row">
+                  <label for="selectedScaleRange">选中零件缩放</label>
+                  <input id="selectedScaleRange" type="range" min="30" max="220" value="100" disabled />
+                  <output id="selectedScaleLabel" for="selectedScaleRange">100%</output>
+                </div>
+                <div class="axis-size-sliders">
+                  <label>
+                    <span>长 X</span>
+                    <input type="range" min="5" max="300" value="100" data-dimension-slider="x" disabled />
+                  </label>
+                  <label>
+                    <span>宽 Z</span>
+                    <input type="range" min="5" max="300" value="100" data-dimension-slider="z" disabled />
+                  </label>
+                  <label>
+                    <span>高 Y</span>
+                    <input type="range" min="5" max="300" value="100" data-dimension-slider="y" disabled />
+                  </label>
+                </div>
+                <div class="number-grid">
+                  <label>
+                    <span>长 X</span>
+                    <input type="number" step="0.05" min="0.05" max="3" data-dimension="x" disabled />
+                  </label>
+                  <label>
+                    <span>宽 Z</span>
+                    <input type="number" step="0.05" min="0.05" max="3" data-dimension="z" disabled />
+                  </label>
+                  <label>
+                    <span>高 Y</span>
+                    <input type="number" step="0.05" min="0.05" max="3" data-dimension="y" disabled />
+                  </label>
+                  <label>
+                    <span>位置 X</span>
+                    <input type="number" step="0.05" min="-2.4" max="2.4" data-position="x" disabled />
+                  </label>
+                  <label>
+                    <span>位置 Y</span>
+                    <input type="number" step="0.05" min="0" max="2.5" data-position="y" disabled />
+                  </label>
+                  <label>
+                    <span>位置 Z</span>
+                    <input type="number" step="0.05" min="-1.8" max="1.8" data-position="z" disabled />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group name-control">
+              <label for="nameInput">作品命名</label>
+              <div class="name-row">
+                <input id="nameInput" type="text" maxlength="18" value="珊瑚花园" autocomplete="off" />
+                <button class="ghost-button" id="randomNameBtn" type="button">换名</button>
+              </div>
+              <div class="rarity-preview" id="rarityPreview">
+                <span>当前稀有度</span>
+                <b id="rarityLabel">普通</b>
+              </div>
+            </div>
+
+            <div class="control-row size-control">
+              <label for="sizeRange">作品整体</label>
+              <input id="sizeRange" type="range" min="80" max="130" value="100" />
+              <output id="sizeLabel" for="sizeRange">100%</output>
+            </div>
+
+            <div class="control-row detail-control">
+              <label for="detailRange">细节</label>
+              <input id="detailRange" type="range" min="1" max="5" value="3" />
+              <output id="detailLabel" for="detailRange">3</output>
+            </div>
+
+            <div class="control-group material-control">
+              <label>材料颜色</label>
+              <div class="swatches" id="colorControls" aria-label="选择材料颜色">
+                <button class="swatch active" style="--swatch: #ff755f" data-color="#ff755f" aria-label="珊瑚红"></button>
+                <button class="swatch" style="--swatch: #44c7b2" data-color="#44c7b2" aria-label="湖绿色"></button>
+                <button class="swatch" style="--swatch: #f7c44a" data-color="#f7c44a" aria-label="麦黄色"></button>
+                <button class="swatch" style="--swatch: #6c83ff" data-color="#6c83ff" aria-label="蓝紫色"></button>
+                <button class="swatch" style="--swatch: #f4f0e8" data-color="#f4f0e8" aria-label="陶瓷白"></button>
+                <button class="swatch" style="--swatch: #20242a" data-color="#20242a" aria-label="石墨黑"></button>
+                <button class="swatch" style="--swatch: #b36bff" data-color="#b36bff" aria-label="葡萄紫"></button>
+                <button class="swatch" style="--swatch: #ff9f1c" data-color="#ff9f1c" aria-label="橙黄色"></button>
+              </div>
+              <div class="color-editor" id="colorEditor">
+                <label class="color-pick">
+                  <span>自定义</span>
+                  <input id="customColorInput" type="color" value="#ff755f" />
+                </label>
+                <label class="tone-control">
+                  <span>明暗</span>
+                  <input id="toneRange" type="range" min="-40" max="40" value="0" />
+                </label>
+                <button class="ghost-button" id="applyAllColorBtn" type="button">应用到全部零件</button>
+              </div>
+            </div>
+
+            <button class="primary-action" id="startPrintBtn">开始打印</button>
+          </div>
+        </section>
+
+        <div class="production-page" id="production">
+        <section class="printer-zone panel" id="printer" aria-label="虚拟 3D 打印机">
+          <div class="section-head compact">
+            <div>
+              <p class="eyebrow">打印机</p>
+              <h2 id="printerTitle">空闲中</h2>
+            </div>
+            <button class="ghost-button" id="speedBtn" title="演示加速">加速</button>
+          </div>
+
+          <div class="printer-scene">
+            <canvas id="printerCanvas" aria-label="打印机运行画面"></canvas>
+            <div class="progress-block">
+              <div class="progress-copy">
+                <span id="printStatus">选择作品后开始打印</span>
+                <b id="progressLabel">0%</b>
+              </div>
+              <div class="progress-track" aria-label="打印进度">
+                <span id="progressBar"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="harvest-panel">
+            <div>
+              <span>收获篮</span>
+              <strong id="harvestHint">暂无完成作品</strong>
+            </div>
+            <button class="secondary-action" id="harvestBtn" disabled>收获作品</button>
+          </div>
+        </section>
+
+        <section class="gallery-zone panel" id="gallery" aria-label="展示台">
+            <div class="section-head compact">
+            <div>
+              <p class="eyebrow">展示台</p>
+              <h2>已打印作品</h2>
+            </div>
+            <div class="stats-strip">
+              <div class="coin-pill">
+                <span>灵感点</span>
+                <b id="coinLabel">0</b>
+              </div>
+              <div class="coin-pill">
+                <span>收藏</span>
+                <b id="favoriteLabel">0</b>
+              </div>
+            </div>
+          </div>
+
+          <div class="display-stage">
+            <canvas id="galleryCanvas" aria-label="展示作品 360 度预览"></canvas>
+            <div class="empty-state" id="emptyGallery">
+              <b>展示台还空着</b>
+              <span>打印完成后，作品会出现在这里。</span>
+            </div>
+          </div>
+
+          <div class="gallery-tools">
+            <div class="swatches compact-swatches" id="paintControls" aria-label="给展示作品上色">
+              <button class="swatch" style="--swatch: #ff755f" data-paint="#ff755f" aria-label="珊瑚红"></button>
+              <button class="swatch" style="--swatch: #44c7b2" data-paint="#44c7b2" aria-label="湖绿色"></button>
+              <button class="swatch" style="--swatch: #f7c44a" data-paint="#f7c44a" aria-label="麦黄色"></button>
+              <button class="swatch" style="--swatch: #6c83ff" data-paint="#6c83ff" aria-label="蓝紫色"></button>
+              <button class="swatch" style="--swatch: #f4f0e8" data-paint="#f4f0e8" aria-label="陶瓷白"></button>
+            </div>
+            <button class="ghost-button" id="spinBtn">自动旋转</button>
+          </div>
+
+          <div class="shelf" id="shelfList" aria-label="作品列表"></div>
+
+          <section class="collection-wall" id="collection" aria-label="收藏墙">
+            <div class="collection-head">
+              <div>
+                <p class="eyebrow">收藏墙</p>
+                <h2>精选作品</h2>
+              </div>
+              <button class="ghost-button" id="clearCollectionBtn" type="button">清空收藏</button>
+            </div>
+            <div class="collection-grid" id="collectionWall"></div>
+          </section>
+        </section>
+        </div>
+      </main>
+    </div>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

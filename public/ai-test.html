@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI 协作人格测试 - Vibe Coding - 4399123</title>
+    <link rel="stylesheet" href="/ai-test.css?v=202605091200" />
+  </head>
+  <body>
+    <main class="app">
+      <a class="home-entry" href="/" aria-label="进入 4399123.com 首页">
+        <span>4399123.com</span>
+        <strong>进入首页</strong>
+      </a>
+
+      <section class="intro" id="intro">
+        <p class="eyebrow">AI Collaboration Test</p>
+        <h1>你和 AI 最适合怎样协作？</h1>
+        <p class="intro-copy">
+          从心理学、社会学和行为学题库中随机抽题，看你更常把 AI 用作判断、创作、沟通、行动，还是自我整理的伙伴。
+        </p>
+        <div class="mode-picker" id="modePicker" aria-label="选择测试模式">
+          <button class="mode-card selected" type="button" data-count="13">
+            <span>13 题快速版</span>
+            <strong>快速了解自己</strong>
+            <small>适合先看大方向。五类维度均衡抽题，结果轻量直接。</small>
+          </button>
+          <button class="mode-card" type="button" data-count="23">
+            <span>23 题深度版</span>
+            <strong>更耐心地看清楚</strong>
+            <small>适合想看得更稳。心理、社会、行为维度取样更充分。</small>
+          </button>
+        </div>
+        <button class="primary-button" id="startButton" type="button">开始测试</button>
+      </section>
+
+      <section class="quiz hidden" id="quiz" aria-live="polite">
+        <div class="topbar">
+          <div>
+            <p class="eyebrow">Question</p>
+            <h2 id="questionCounter">第 1 题 / 共 13 题</h2>
+          </div>
+          <div class="quiz-meter">
+            <div class="timer-chip" id="quizTimer">用时 00:00</div>
+            <div class="score-chip" id="pulseScore">共鸣值 0</div>
+            <div class="progress-shell" aria-hidden="true">
+              <div class="progress-bar" id="progressBar"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-layout">
+          <article class="question-panel">
+            <p class="question-text" id="questionText"></p>
+            <div class="choice-grid" id="choiceGrid"></div>
+            <div class="score-burst-layer" id="scoreBurstLayer" aria-hidden="true"></div>
+            <div class="answer-feedback hidden" id="answerFeedback"></div>
+          </article>
+
+        </div>
+
+        <div class="nav-row">
+          <button class="ghost-button" id="prevButton" type="button">上一题</button>
+          <button class="primary-button" id="nextButton" type="button">下一题</button>
+        </div>
+      </section>
+
+      <section class="result hidden" id="result">
+        <div class="result-hero">
+          <img class="persona-image" id="resultImage" src="" alt="" />
+          <div>
+            <p class="eyebrow">Result</p>
+            <div class="result-meta" id="resultMeta"></div>
+            <h2 id="resultTitle"></h2>
+            <p class="result-desc" id="resultDescription"></p>
+            <div class="result-primary-actions">
+              <button class="primary-button" id="saveResultButton" type="button">保存结果图</button>
+              <button class="ghost-button" id="restartButton" type="button">重新测试</button>
+              <button class="ghost-button" id="shareButton" type="button">复制结果</button>
+            </div>
+          </div>
+        </div>
+
+        <section class="result-section result-stats-section">
+          <details class="stats-panel">
+            <summary>
+              <span>
+                <small class="eyebrow">Site Stats</small>
+                人格数量统计
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="stats-summary" id="statsSummary"></div>
+            <div class="stats-tree" id="statsTree"></div>
+            <p class="stats-notice" id="statsNotice"></p>
+          </details>
+        </section>
+
+        <div class="insight-grid" id="insightGrid"></div>
+
+        <section class="result-section compact-result-section">
+          <details class="score-panel">
+            <summary>
+              <span>
+                <small class="eyebrow">Scores</small>
+                五维得分
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="score-list" id="scoreList"></div>
+          </details>
+        </section>
+
+        <section class="result-section">
+          <details class="answer-history">
+            <summary>
+              <span>
+                <small class="eyebrow">Answer Log</small>
+                本次问答记录
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="answer-history-meta" id="answerHistoryMeta"></div>
+            <div class="answer-history-list" id="answerHistoryList"></div>
+          </details>
+        </section>
+
+        <section class="result-section">
+          <details class="ranking-panel">
+            <summary>
+              <span>
+                <small class="eyebrow">Rankings</small>
+                AI 人格排行榜
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="ranking-grid" id="rankingGrid"></div>
+          </details>
+        </section>
+
+        <section class="result-section">
+          <details class="usage-panel">
+            <summary>
+              <span>
+                <small class="eyebrow">Usage Tier</small>
+                AI 使用强度排行榜
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="usage-tier-grid" id="usageTierGrid"></div>
+          </details>
+        </section>
+
+        <section class="result-section">
+          <details class="atlas-panel">
+            <summary>
+              <span>
+                <small class="eyebrow">Persona Atlas</small>
+                全部人格图鉴
+              </span>
+              <em>点击查看</em>
+            </summary>
+            <div class="persona-atlas" id="personaAtlas"></div>
+            <article class="persona-detail" id="personaDetail"></article>
+          </details>
+        </section>
+      </section>
+    </main>
+
+    <script src="/ai-test.js?v=202605091200"></script>
+  </body>
+</html>
