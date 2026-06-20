@@ -1,14 +1,31 @@
 {
+  "name": "4399123.com-open-source",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Open-source Vibe Coding community entrance for 4399123.com.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://4399123.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/linhucong814-cyber/4399123.com.git"
+  },
+  "bugs": {
+    "url": "https://github.com/linhucong814-cyber/4399123.com/issues"
+  },
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "prebuild": "node scripts/generate-static.mjs",
     "build": "vite build && node scripts/postbuild-routes.mjs",
-    "preview": "vite preview --host 0.0.0.0"
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "npm run build"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "dependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
-    "vite": "^6.3.5",
+    "vite": "^6.4.3",
     "vue": "^3.5.13"
-  },
-  "devDependencies": {}
+  }
 }

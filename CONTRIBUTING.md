@@ -19,25 +19,26 @@ You can help by:
 
 ## Beginner Workflow
 
-1. Open an issue and describe what you want to improve.
+1. Open an issue and describe what you want to improve. Use the bug or content template when it fits.
 2. Fork the repository.
 3. Create a new branch.
 4. Make a small change.
-5. Submit a pull request.
+5. Run the local checks.
+6. Submit a pull request with the pull request template filled in.
 
 If you are new to GitHub, it is completely fine to start with a typo fix or a small docs update.
 
 ## Local Development
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
 Before opening a pull request, run:
 
 ```bash
-npm run build
+npm run check
 ```
 
 ## Content Contributions
@@ -84,6 +85,13 @@ Good examples:
 - Add one project card
 - Improve mobile layout for the blog page
 - Add a beginner FAQ page
+
+Before opening a pull request:
+
+- review `git diff`
+- confirm no secrets or private server files are included
+- confirm generated `public/rss.xml` and `public/sitemap.xml` changes are expected
+- include screenshots or notes when the UI changes
 
 ## Community Tone
 

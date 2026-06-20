@@ -28,12 +28,29 @@ export const navigationItems = [
     href: "/vibe-coding/chinese-image-prompt/",
   },
   {
+    label: "Agent 提示词模板生成器",
+    href: "/vibe-coding/agent-prompt-template/",
+  },
+  {
+    label: "分享 Vibe Coding",
+    href: "/vibe-coding/showcase",
+  },
+  {
     label: "番茄钟",
     href: "/vibe-coding/pulse-pomodoro/",
   },
   {
+    label: "OpenClaw 第三方 API 配置生成器",
+    href: "/vibe-coding/openclaw-easy-config/",
+  },
+  {
     label: "VibeCPU",
     href: "/vibecpu/",
+  },
+  {
+    label: "中转站",
+    href: "https://shinemoon.com/",
+    external: true,
   },
   {
     label: "AI 人格测试",

@@ -1,0 +1,1183 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 提示词模板生成器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --ink: #181c22;
+      --muted: #5e6571;
+      --line: #d9dee7;
+      --soft-line: #edf0f4;
+      --accent: #0f766e;
+      --accent-hover: #0b625b;
+      --blue: #2563eb;
+      --blue-hover: #1d4ed8;
+      --amber: #b45309;
+      --amber-soft: #fff7ed;
+      --danger: #c2410c;
+      --danger-soft: #fff3ed;
+      --success: #147a45;
+      --shadow: 0 18px 42px rgba(24, 28, 34, 0.09);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    a,
+    button,
+    input,
+    select,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    .quick-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .domain-shortcut {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 22px rgba(24, 28, 34, 0.06);
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .domain-shortcut:hover {
+      border-color: rgba(15, 118, 110, 0.38);
+      background: #eefaf7;
+      color: var(--accent-hover);
+    }
+
+    .domain-shortcut:active {
+      transform: translateY(1px);
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .template-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .template-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .template-option:hover {
+      border-color: rgba(15, 118, 110, 0.38);
+      background: #eefaf7;
+      color: var(--accent-hover);
+    }
+
+    .template-option:active {
+      transform: translateY(1px);
+    }
+
+    .template-option.is-active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 0.94fr) minmax(0, 1.06fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 54px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--soft-line);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .field,
+    .result,
+    .mini-field {
+      display: block;
+      width: 100%;
+      border: 0;
+      outline: none;
+      color: var(--ink);
+      background: transparent;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .field {
+      min-height: 214px;
+      resize: vertical;
+      padding: 18px;
+    }
+
+    .field::placeholder,
+    .mini-field::placeholder {
+      color: #8b93a1;
+    }
+
+    .field:focus,
+    .mini-field:focus,
+    .result:focus {
+      box-shadow: inset 0 0 0 2px rgba(15, 118, 110, 0.22);
+    }
+
+    .image-options {
+      display: grid;
+      gap: 14px;
+      padding: 16px;
+      border-top: 1px solid var(--soft-line);
+      background: #fff;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .control {
+      min-width: 0;
+    }
+
+    .control-label {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .select,
+    .text-input {
+      width: 100%;
+      min-height: 40px;
+      padding: 0 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+    }
+
+    .select:focus,
+    .text-input:focus {
+      border-color: rgba(15, 118, 110, 0.62);
+      box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.12);
+    }
+
+    .mini-field {
+      min-height: 78px;
+      padding: 10px 11px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      resize: vertical;
+      background: #fff;
+      font-size: 14px;
+    }
+
+    .check-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .check-chip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 36px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      background: #fff;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-chip input {
+      width: 15px;
+      height: 15px;
+      margin: 0;
+      accent-color: var(--accent);
+    }
+
+    .result {
+      min-height: 444px;
+      padding: 18px;
+      resize: vertical;
+      background: #fbfcfd;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .result.placeholder {
+      color: #8b93a1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 14px 16px;
+      border-top: 1px solid var(--soft-line);
+      background: #fff;
+    }
+
+    .status {
+      margin-right: auto;
+      min-height: 20px;
+      color: var(--success);
+      font-size: 14px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .button:hover {
+      border-color: #b9c1ce;
+      background: #f7f8fa;
+    }
+
+    .button:active {
+      transform: translateY(1px);
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .button.primary:hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    .button.ai {
+      border-color: var(--blue);
+      background: var(--blue);
+      color: #fff;
+    }
+
+    .button.ai:hover {
+      border-color: var(--blue-hover);
+      background: var(--blue-hover);
+    }
+
+    .button.danger {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: #fed7c3;
+    }
+
+    .button.danger:hover {
+      background: #ffe6da;
+      border-color: #fdba9f;
+    }
+
+    .button:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .template-note {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .prompt-dialog {
+      width: min(780px, calc(100% - 32px));
+      max-height: min(820px, calc(100vh - 32px));
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(24, 28, 34, 0.22);
+    }
+
+    .prompt-dialog::backdrop {
+      background: rgba(24, 28, 34, 0.38);
+    }
+
+    .dialog-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: min(680px, calc(100vh - 64px));
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--soft-line);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .dialog-result {
+      flex: 1;
+      width: 100%;
+      min-height: 360px;
+      padding: 18px;
+      border: 0;
+      outline: none;
+      resize: vertical;
+      background: #fbfcfd;
+      color: var(--ink);
+      line-height: 1.75;
+      font-size: 16px;
+      white-space: pre-wrap;
+    }
+
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--soft-line);
+      background: #fff;
+    }
+
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 920px) {
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .result {
+        min-height: 360px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        width: min(100% - 24px, 680px);
+        padding: 20px 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .option-grid,
+      .check-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .actions,
+      .dialog-actions {
+        flex-wrap: wrap;
+        justify-content: stretch;
+      }
+
+      .status {
+        flex-basis: 100%;
+      }
+
+      .button {
+        flex: 1 1 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <nav class="quick-links" aria-label="域名快捷入口">
+      <a class="domain-shortcut" href="https://4399123.com/">4399123.com</a>
+    </nav>
+
+    <header class="topbar">
+      <h1>Agent 提示词模板生成器</h1>
+      <div class="badge">实时生成</div>
+    </header>
+
+    <section class="template-picker" aria-label="选择提示词模板">
+      <button class="template-option" type="button" data-template="default" aria-pressed="false">通用任务</button>
+      <button class="template-option" type="button" data-template="goal" aria-pressed="false">帮我写 /goal</button>
+      <button class="template-option is-active" type="button" data-template="image" aria-pressed="true">图片生成</button>
+    </section>
+
+    <section class="workspace" aria-label="提示词生成工作区">
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title" id="inputTitle">图片描述</h2>
+          <span class="counter" id="inputCounter">0 字</span>
+        </div>
+        <textarea
+          id="topicInput"
+          class="field"
+          placeholder="例如：一位穿银色风衣的未来城市女侦探，站在雨后的霓虹街道"
+          aria-label="你想生成什么图片"
+          autofocus
+        ></textarea>
+
+        <div class="image-options" id="imageOptions" aria-label="图片生成参数">
+          <div class="option-grid">
+            <label class="control">
+              <span class="control-label">主体类型</span>
+              <select class="select" id="subjectType">
+                <option value="person">人物</option>
+                <option value="item">物品 / 产品</option>
+                <option value="scene">场景 / 空间</option>
+                <option value="character">角色概念</option>
+              </select>
+            </label>
+            <label class="control">
+              <span class="control-label">画面风格</span>
+              <select class="select" id="styleType">
+                <option value="photo">写实摄影</option>
+                <option value="cinematic">电影感</option>
+                <option value="product">商业产品海报</option>
+                <option value="illustration">精致插画</option>
+                <option value="anime">动漫风格</option>
+                <option value="render3d">3D 渲染</option>
+              </select>
+            </label>
+            <label class="control">
+              <span class="control-label">构图镜头</span>
+              <select class="select" id="compositionType">
+                <option value="medium">中景构图</option>
+                <option value="close">近景特写</option>
+                <option value="wide">远景全景</option>
+                <option value="center">居中对称</option>
+                <option value="top">俯拍视角</option>
+                <option value="low">仰拍视角</option>
+                <option value="negative">大面积留白</option>
+              </select>
+            </label>
+            <label class="control">
+              <span class="control-label">光影氛围</span>
+              <select class="select" id="lightingType">
+                <option value="soft">柔和自然光</option>
+                <option value="studio">棚拍灯光</option>
+                <option value="backlight">逆光轮廓光</option>
+                <option value="neon">霓虹夜景</option>
+                <option value="golden">黄金时刻</option>
+                <option value="contrast">高反差光影</option>
+              </select>
+            </label>
+            <label class="control">
+              <span class="control-label">画幅比例</span>
+              <select class="select" id="ratioType">
+                <option value="3:4">3:4</option>
+                <option value="1:1">1:1</option>
+                <option value="4:5">4:5</option>
+                <option value="16:9">16:9</option>
+                <option value="9:16">9:16</option>
+                <option value="2:3">2:3</option>
+              </select>
+            </label>
+            <label class="control">
+              <span class="control-label">质量词</span>
+              <input class="text-input" id="qualityInput" value="高清，细节丰富，专业质感，干净背景，主体清晰" aria-label="质量词">
+            </label>
+          </div>
+
+          <div class="control">
+            <span class="control-label">包含模块</span>
+            <div class="check-grid">
+              <label class="check-chip"><input type="checkbox" data-include="zh" checked>中文提示词</label>
+              <label class="check-chip"><input type="checkbox" data-include="en" checked>英文提示词</label>
+              <label class="check-chip"><input type="checkbox" data-include="negative" checked>负面词</label>
+              <label class="check-chip"><input type="checkbox" data-include="optimize" checked>优化要求</label>
+              <label class="check-chip"><input type="checkbox" data-include="parameters" checked>参数建议</label>
+              <label class="check-chip"><input type="checkbox" data-include="agent" checked>Agent 指令</label>
+            </div>
+          </div>
+
+          <label class="control">
+            <span class="control-label">补充负面词</span>
+            <textarea class="mini-field" id="negativeInput" aria-label="补充负面词" placeholder="例如：文字错乱，水印，畸形手指，低清晰度"></textarea>
+          </label>
+        </div>
+
+        <div class="actions">
+          <button class="button danger" id="clearButton" type="button">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M19 6l-1 14H6L5 6"></path>
+              <path d="M10 11v5"></path>
+              <path d="M14 11v5"></path>
+            </svg>
+            清空
+          </button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title" id="outputTitle">图片提示词</h2>
+          <span class="counter" id="outputCounter">0 字</span>
+        </div>
+        <textarea id="promptOutput" class="result placeholder" aria-label="生成结果" readonly>输入内容后，这里会生成完整提示词。</textarea>
+        <div class="actions">
+          <span class="status" id="copyStatus" role="status" aria-live="polite"></span>
+          <button class="button ai" id="expandButton" type="button">
+            优化成任务提示词
+          </button>
+          <button class="button primary" id="copyButton" type="button">
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            复制提示词
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <div class="template-note" id="templateNote">
+      图片模板：支持人物、物品、场景、负面词和优化指令。
+    </div>
+  </main>
+
+  <dialog class="prompt-dialog" id="aiDialog">
+    <div class="dialog-shell">
+      <div class="dialog-head">
+        <h2 id="dialogTitle">下一步完整提示词</h2>
+        <button class="button" id="closeDialogButton" type="button">关闭</button>
+      </div>
+      <textarea id="aiPromptOutput" class="dialog-result" aria-label="AI 生成的下一步完整提示词" readonly></textarea>
+      <div class="dialog-actions">
+        <span class="status" id="aiStatus" role="status" aria-live="polite"></span>
+        <button class="button primary" id="copyAiButton" type="button">复制完整提示词</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script>
+    const topicInput = document.getElementById("topicInput");
+    const promptOutput = document.getElementById("promptOutput");
+    const copyButton = document.getElementById("copyButton");
+    const expandButton = document.getElementById("expandButton");
+    const clearButton = document.getElementById("clearButton");
+    const copyStatus = document.getElementById("copyStatus");
+    const inputCounter = document.getElementById("inputCounter");
+    const outputCounter = document.getElementById("outputCounter");
+    const inputTitle = document.getElementById("inputTitle");
+    const outputTitle = document.getElementById("outputTitle");
+    const templateNote = document.getElementById("templateNote");
+    const imageOptions = document.getElementById("imageOptions");
+    const subjectType = document.getElementById("subjectType");
+    const styleType = document.getElementById("styleType");
+    const compositionType = document.getElementById("compositionType");
+    const lightingType = document.getElementById("lightingType");
+    const ratioType = document.getElementById("ratioType");
+    const qualityInput = document.getElementById("qualityInput");
+    const negativeInput = document.getElementById("negativeInput");
+    const includeChecks = Array.from(document.querySelectorAll("[data-include]"));
+    const aiDialog = document.getElementById("aiDialog");
+    const aiPromptOutput = document.getElementById("aiPromptOutput");
+    const aiStatus = document.getElementById("aiStatus");
+    const copyAiButton = document.getElementById("copyAiButton");
+    const closeDialogButton = document.getElementById("closeDialogButton");
+    const dialogTitle = document.getElementById("dialogTitle");
+    const templateButtons = Array.from(document.querySelectorAll("[data-template]"));
+
+    const suffix = "检查完成之后制定修复方案并向我汇报，在批准后执行";
+    const placeholder = "输入内容后，这里会生成完整提示词。";
+    const expandEndpoint = "/api/vibe-coding/prompt-template/expand";
+    let activeTemplate = "default";
+    let aiPrompt = "";
+
+    const meta = {
+      default: {
+        inputTitle: "输入内容",
+        outputTitle: "生成结果",
+        placeholder: "例如：帮我检查一个网站的 UI 问题",
+        expandLabel: "AI 生成下一步",
+        note: `固定结尾：${suffix}`
+      },
+      goal: {
+        inputTitle: "/goal 想法",
+        outputTitle: "/goal 提示词",
+        placeholder: "例如：检查首页移动端排版问题并生成可执行修复任务",
+        expandLabel: "AI 生成下一步",
+        note: `固定结尾：${suffix}`
+      },
+      image: {
+        inputTitle: "图片描述",
+        outputTitle: "图片提示词",
+        placeholder: "例如：一位穿银色风衣的未来城市女侦探，站在雨后的霓虹街道",
+        expandLabel: "AI 生成下一步",
+        note: "图片模板：支持人物、物品、场景、负面词和优化指令。"
+      }
+    };
+
+    const zh = {
+      subject: {
+        person: "人物主体清晰，包含年龄气质、五官神态、服装发型、姿势动作和镜头距离",
+        item: "物品主体明确，强调材质、颜色、结构、用途、边缘细节和摆放方式",
+        scene: "场景层次完整，包含地点、时间、空间关系、背景元素和整体氛围",
+        character: "角色设定鲜明，包含轮廓、服饰、道具、表情、姿态和可识别气质"
+      },
+      style: {
+        photo: "写实摄影风格，真实质感，专业相机成像",
+        cinematic: "电影感画面，叙事氛围强，色彩克制，高级镜头语言",
+        product: "商业产品海报风格，主体突出，精致布光，适合宣传展示",
+        illustration: "精致插画风格，线条干净，色彩协调，画面完成度高",
+        anime: "高质量动漫风格，角色轮廓清晰，表情生动，色彩鲜明",
+        render3d: "高质量 3D 渲染，材质真实，空间光影准确，细节精密"
+      },
+      composition: {
+        medium: "中景构图，主体占据画面核心，背景保留适度信息",
+        close: "近景特写，突出主体表情、材质和关键细节",
+        wide: "远景全景，展示主体与环境关系，空间感清晰",
+        center: "居中对称构图，视觉稳定，主体边界清楚",
+        top: "俯拍视角，结构关系明确，画面干净有序",
+        low: "仰拍视角，增强主体气势和纵深感",
+        negative: "大面积留白构图，主体简洁醒目，适合加入文案"
+      },
+      lighting: {
+        soft: "柔和自然光，阴影细腻，色彩自然",
+        studio: "棚拍灯光，轮廓清晰，材质反光受控",
+        backlight: "逆光轮廓光，边缘高光明显，氛围感强",
+        neon: "霓虹夜景光，冷暖对比，雨后反光和城市氛围",
+        golden: "黄金时刻光线，温暖柔和，层次丰富",
+        contrast: "高反差光影，明暗关系明确，戏剧性强"
+      }
+    };
+
+    const en = {
+      subject: {
+        person: "clear human subject, age and personality cues, facial expression, outfit, hairstyle, pose, camera distance",
+        item: "well-defined object or product, material, color, structure, use case, edges, surface details, placement",
+        scene: "complete environment, location, time of day, spatial depth, background elements, atmosphere",
+        character: "distinct character concept, silhouette, costume, props, expression, posture, recognizable personality"
+      },
+      style: {
+        photo: "photorealistic professional photography",
+        cinematic: "cinematic image with controlled color grading and narrative atmosphere",
+        product: "commercial product poster with refined studio polish",
+        illustration: "polished illustration with clean linework and balanced colors",
+        anime: "high-quality anime style with expressive character design",
+        render3d: "high-end 3D render with realistic materials and accurate lighting"
+      },
+      composition: {
+        medium: "medium shot composition, subject centered in the visual hierarchy, background context visible",
+        close: "close-up framing, emphasizing expression, material, and key details",
+        wide: "wide shot, showing the relationship between subject and environment",
+        center: "centered symmetrical composition with a stable visual structure",
+        top: "top-down angle with clear object relationships and clean layout",
+        low: "low-angle view for stronger presence and depth",
+        negative: "generous negative space, clean subject focus, suitable for adding copy"
+      },
+      lighting: {
+        soft: "soft natural light, subtle shadows, natural color",
+        studio: "controlled studio lighting, crisp silhouette, managed reflections",
+        backlight: "backlit rim lighting, visible edge highlights, atmospheric mood",
+        neon: "neon night lighting, cool-warm contrast, wet street reflections",
+        golden: "golden hour light, warm tones, rich depth",
+        contrast: "high-contrast lighting, strong light and shadow, dramatic mood"
+      }
+    };
+
+    const subjectNegative = {
+      person: "低清晰度，模糊，畸形，脸部崩坏，五官错位，额外手指，缺失手指，手部变形，肢体比例错误，多余肢体，皮肤塑料感，眼睛不对称",
+      item: "低清晰度，模糊，产品变形，结构错误，材质廉价，边缘破损，比例错误，错误文字，错位标志，水印，杂乱背景",
+      scene: "低清晰度，模糊，空间透视错误，背景杂乱，物体悬浮，比例失衡，过度噪点，水印，文字错误",
+      character: "低清晰度，模糊，角色崩坏，肢体比例错误，多余手指，服装结构错误，面部变形，边缘糊成一团，水印"
+    };
+
+    function trimLines(value) {
+      return value
+        .split(/[,，\n]/)
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .join("，");
+    }
+
+    function getIncluded() {
+      return includeChecks.reduce((set, input) => {
+        if (input.checked) {
+          set.add(input.dataset.include);
+        }
+        return set;
+      }, new Set());
+    }
+
+    function imageSettings() {
+      return {
+        subject: subjectType.value,
+        style: styleType.value,
+        composition: compositionType.value,
+        lighting: lightingType.value,
+        ratio: ratioType.value,
+        quality: qualityInput.value.trim() || "高清，细节丰富，专业质感，主体清晰",
+        negativeExtra: trimLines(negativeInput.value)
+      };
+    }
+
+    function buildNegative(settings) {
+      const base = subjectNegative[settings.subject];
+      const common = "文字错乱，错误拼写，水印，logo 误生成，裁切主体，过曝，欠曝，噪点过多，压缩痕迹";
+      return [base, common, settings.negativeExtra].filter(Boolean).join("，");
+    }
+
+    function buildImagePrompt(content) {
+      const settings = imageSettings();
+      const included = getIncluded();
+      const negative = buildNegative(settings);
+      const lines = [];
+
+      if (included.has("zh")) {
+        lines.push("中文图片生成提示词：");
+        lines.push(`${content}。${zh.subject[settings.subject]}，${zh.style[settings.style]}，${zh.composition[settings.composition]}，${zh.lighting[settings.lighting]}，${settings.quality}，画幅比例 ${settings.ratio}。`);
+        lines.push("");
+      }
+
+      if (included.has("en")) {
+        lines.push("English Image Prompt:");
+        lines.push(`Create ${en.style[settings.style]} based on this subject: "${content}". Use ${en.subject[settings.subject]}. Composition: ${en.composition[settings.composition]}. Lighting: ${en.lighting[settings.lighting]}. High resolution, rich detail, professional finish, clean visual hierarchy, aspect ratio ${settings.ratio}.`);
+        lines.push("");
+      }
+
+      if (included.has("negative")) {
+        lines.push("Negative Prompt / 负面提示词：");
+        lines.push(negative);
+        lines.push("");
+      }
+
+      if (included.has("optimize")) {
+        lines.push("优化要求：");
+        lines.push("- 保持主体明确，不要新增未提到的品牌、文字、水印或无关角色。");
+        lines.push("- 人物类补足神态、姿势、服装、发型和镜头距离；物品类补足材质、颜色、结构、用途和摆放方式。");
+        lines.push("- 场景类补足地点、时间、背景元素、环境氛围和光影关系。");
+        lines.push("- 输出时优先保证构图、主体边缘、手部/脸部/产品结构的稳定性。");
+        lines.push("");
+      }
+
+      if (included.has("parameters")) {
+        lines.push("参数建议：");
+        lines.push(`画幅比例：${settings.ratio}`);
+        lines.push("质量倾向：高质量，高清细节，主体清晰，风格统一");
+        lines.push("");
+      }
+
+      if (included.has("agent")) {
+        lines.push("给 Agent 的优化指令：");
+        lines.push("请基于以上内容进一步优化为可直接用于图片生成模型的最终提示词，分别输出中文提示词、英文提示词、负面提示词和参数建议。");
+      }
+
+      return lines.join("\n").trim();
+    }
+
+    const templates = {
+      default(content) {
+        return `请帮我生成一段提示词交给agent，让它帮我做一个“${content}”，然后把ai的一大段提示词再发给agent，末尾加一句：${suffix}`;
+      },
+      goal(content) {
+        return `请你帮我把下面这个想法整理成一个适合交给 /goal 指令执行的完整任务。
+
+我的原始想法是：
+${content}
+
+请输出一段完整的 /goal 任务提示词，要求：
+- 目标清晰
+- 范围明确
+- 结果可验证
+- 任务可以被 agent 持续执行
+- 包含必要的背景信息
+- 包含具体要求和约束
+- 包含完成标准
+- 如果信息不足，请先指出缺失信息，并给出可补充的问题
+- 最终输出要适合我直接复制给 /goal 使用
+
+输出格式请包含：
+1. 任务目标
+2. 背景说明
+3. 具体要求
+4. 完成标准
+5. 给 /goal 使用的最终提示词
+
+请把 AI 生成的一大段提示词整理好后再发给 agent，末尾必须加一句：${suffix}`;
+      },
+      image(content) {
+        return buildImagePrompt(content);
+      }
+    };
+
+    function buildPrompt(rawValue) {
+      const content = rawValue.trim();
+      if (!content) {
+        return "";
+      }
+      return templates[activeTemplate](content);
+    }
+
+    function buildExpandedPrompt() {
+      const content = topicInput.value.trim();
+      const prompt = buildPrompt(topicInput.value);
+      if (!content || !prompt) {
+        return "";
+      }
+
+      if (activeTemplate === "image") {
+        const settings = imageSettings();
+        return `请作为 AI 图片提示词优化 agent，基于下方需求生成可直接用于图片生成模型的高质量提示词。
+
+原始图片需求：
+${content}
+
+当前模板参数：
+- 主体类型：${subjectType.options[subjectType.selectedIndex].textContent}
+- 画面风格：${styleType.options[styleType.selectedIndex].textContent}
+- 构图镜头：${compositionType.options[compositionType.selectedIndex].textContent}
+- 光影氛围：${lightingType.options[lightingType.selectedIndex].textContent}
+- 画幅比例：${settings.ratio}
+- 质量词：${settings.quality}
+- 补充负面词：${settings.negativeExtra || "无"}
+
+请输出：
+1. 中文图片生成提示词
+2. English Image Prompt
+3. Negative Prompt / 负面提示词
+4. 参数建议
+5. 可复制的完整版本
+
+要求：
+- 人物类请补充外貌、表情、姿势、服装、发型、气质和镜头距离。
+- 物品类请补充主体类型、材质、颜色、结构、用途、产品细节和摆放方式。
+- 场景类请补充地点、时间、环境、背景元素、空间层次和氛围。
+- 请优化构图、光影、风格、质量词和负面词，但不要添加与原始需求冲突的新主体。
+- 负面词需要覆盖低清晰度、畸形、额外手指、文字错误、水印、模糊、变形、比例错误等常见问题。
+
+这是当前模板生成的草稿，请在它的基础上优化：
+${prompt}
+
+${suffix}`;
+      }
+
+      return `请作为可执行任务的 agent，基于下面内容生成一段更完整、更清晰、可直接交给 agent 执行的提示词。
+
+原始内容：
+${content}
+
+当前模板生成结果：
+${prompt}
+
+请优化为结构清晰的完整提示词，包含目标、背景、范围、具体要求、交付物、完成标准和验证方式。
+
+${suffix}`;
+    }
+
+    function setActiveTemplate(templateName) {
+      activeTemplate = templateName;
+      templateButtons.forEach((button) => {
+        const isActive = button.dataset.template === templateName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+
+      const currentMeta = meta[templateName];
+      inputTitle.textContent = currentMeta.inputTitle;
+      outputTitle.textContent = currentMeta.outputTitle;
+      topicInput.placeholder = currentMeta.placeholder;
+      expandButton.textContent = currentMeta.expandLabel;
+      templateNote.textContent = currentMeta.note;
+      imageOptions.hidden = templateName !== "image";
+      render();
+    }
+
+    function setStatus(message) {
+      copyStatus.textContent = message;
+      if (message) {
+        window.clearTimeout(setStatus.timer);
+        setStatus.timer = window.setTimeout(() => {
+          copyStatus.textContent = "";
+        }, 1800);
+      }
+    }
+
+    function setAiStatus(message) {
+      aiStatus.textContent = message;
+      if (message) {
+        window.clearTimeout(setAiStatus.timer);
+        setAiStatus.timer = window.setTimeout(() => {
+          aiStatus.textContent = "";
+        }, 2200);
+      }
+    }
+
+    function setGenerating(isGenerating) {
+      const prompt = buildPrompt(topicInput.value);
+      const currentMeta = meta[activeTemplate];
+      expandButton.disabled = isGenerating || !prompt;
+      expandButton.textContent = isGenerating ? "生成中..." : currentMeta.expandLabel;
+      copyAiButton.disabled = isGenerating || !aiPrompt;
+    }
+
+    function openAiDialog() {
+      if (typeof aiDialog.showModal === "function" && !aiDialog.open) {
+        aiDialog.showModal();
+        return;
+      }
+      aiDialog.setAttribute("open", "");
+    }
+
+    async function copyText(text) {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return;
+      }
+
+      const fallback = document.createElement("textarea");
+      fallback.value = text;
+      fallback.setAttribute("readonly", "");
+      fallback.style.position = "fixed";
+      fallback.style.top = "-999px";
+      document.body.appendChild(fallback);
+      fallback.select();
+      document.execCommand("copy");
+      fallback.remove();
+    }
+
+    function render() {
+      const inputValue = topicInput.value;
+      const prompt = buildPrompt(inputValue);
+      const hasInput = inputValue.trim().length > 0;
+
+      inputCounter.textContent = `${inputValue.trim().length} 字`;
+      outputCounter.textContent = `${prompt.length} 字`;
+      promptOutput.value = prompt || placeholder;
+      promptOutput.classList.toggle("placeholder", !prompt);
+      copyButton.disabled = !prompt;
+      expandButton.disabled = !prompt;
+      clearButton.disabled = !hasInput;
+      if (!prompt) {
+        setStatus("");
+      }
+    }
+
+    topicInput.addEventListener("input", render);
+    [subjectType, styleType, compositionType, lightingType, ratioType, qualityInput, negativeInput].forEach((control) => {
+      control.addEventListener("input", render);
+      control.addEventListener("change", render);
+    });
+    includeChecks.forEach((control) => control.addEventListener("change", render));
+
+    templateButtons.forEach((button) => {
+      button.addEventListener("click", () => setActiveTemplate(button.dataset.template));
+    });
+
+    copyButton.addEventListener("click", async () => {
+      const prompt = buildPrompt(topicInput.value);
+      if (!prompt) {
+        return;
+      }
+
+      try {
+        await copyText(prompt);
+        setStatus("已复制");
+      } catch (error) {
+        setStatus("复制失败，请手动选择文本");
+      }
+    });
+
+    expandButton.addEventListener("click", async () => {
+      const prompt = buildPrompt(topicInput.value);
+      const topic = topicInput.value.trim();
+      if (!prompt) {
+        return;
+      }
+
+      dialogTitle.textContent = activeTemplate === "image" ? "图片模板优化指令" : "下一步完整提示词";
+      aiPrompt = "";
+      aiPromptOutput.value = "正在生成...";
+      copyAiButton.disabled = true;
+      openAiDialog();
+      setAiStatus("正在生成...");
+      setGenerating(true);
+
+      try {
+        const response = await fetch(expandEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ prompt, topic })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok || !data.prompt) {
+          throw new Error(data.error || "AI 生成暂时失败，请稍后重试。");
+        }
+
+        aiPrompt = data.prompt.trim();
+        aiPromptOutput.value = aiPrompt;
+        copyAiButton.disabled = !aiPrompt;
+        setAiStatus("生成完成");
+      } catch (error) {
+        aiPromptOutput.value = error.message || "AI 生成暂时失败，请稍后重试。";
+        setAiStatus("生成失败");
+      } finally {
+        setGenerating(false);
+      }
+    });
+
+    copyAiButton.addEventListener("click", async () => {
+      if (!aiPrompt) {
+        return;
+      }
+
+      try {
+        await copyText(aiPrompt);
+        setAiStatus("已复制");
+      } catch (error) {
+        setAiStatus("复制失败，请手动选择文本");
+      }
+    });
+
+    closeDialogButton.addEventListener("click", () => {
+      aiDialog.close();
+    });
+
+    clearButton.addEventListener("click", () => {
+      topicInput.value = "";
+      topicInput.focus();
+      render();
+    });
+
+    setActiveTemplate(activeTemplate);
+  </script>
+</body>
+</html>

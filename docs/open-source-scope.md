@@ -13,6 +13,9 @@ This repository is the public first version of 4399123.com.
 - Public content files
 - Public assets needed by the site
 - Open-source community docs
+- GitHub contribution templates
+- CI workflow for build verification
+- Sanitized server audit notes
 
 ## Excluded
 
@@ -26,6 +29,7 @@ This repository is the public first version of 4399123.com.
 - Runtime logs
 - Local virtual environments
 - Installed dependencies
+- Deployment archives and local backup folders
 
 ## Why
 

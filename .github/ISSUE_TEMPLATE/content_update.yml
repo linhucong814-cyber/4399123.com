@@ -1,0 +1,36 @@
+name: Content or project update
+description: Suggest a Vibe Coding project, post, prompt note, or docs improvement.
+title: "[Content]: "
+labels:
+  - content
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for public content only. Do not paste private keys, private user data, production logs, or unpublished credentials.
+  - type: dropdown
+    id: content_type
+    attributes:
+      label: Content type
+      options:
+        - Project card
+        - Blog or journal post
+        - Interesting note
+        - Docs improvement
+        - Homepage copy
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed update
+      description: Tell us what should be added or changed.
+    validations:
+      required: true
+  - type: textarea
+    id: assets
+    attributes:
+      label: Public assets or links
+      description: Add links to public assets only if you have permission to share them.
+    validations:
+      required: false

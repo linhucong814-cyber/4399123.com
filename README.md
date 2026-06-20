@@ -1,5 +1,7 @@
 # 4399123.com
 
+[![CI](https://github.com/linhucong814-cyber/4399123.com/actions/workflows/ci.yml/badge.svg)](https://github.com/linhucong814-cyber/4399123.com/actions/workflows/ci.yml)
+
 4399123.com is an open-source Vibe Coding community entrance for makers who build with AI.
 
 It collects AI coding experiments, small tools, project notes, community posts, and journal-style writing around building things quickly with taste, curiosity, and momentum.
@@ -14,6 +16,8 @@ It collects AI coding experiments, small tools, project notes, community posts, 
 - Local content data for posts and projects
 - Static generation scripts
 - Beginner-friendly open-source docs
+- GitHub issue / pull request templates
+- CI build verification for pull requests
 
 This first open-source version intentionally does not include production databases, Django secrets, administrator accounts, email settings, third-party API keys, server configuration, or private user data.
 
@@ -52,10 +56,18 @@ Preview the build:
 npm run preview
 ```
 
+Run the same check used by CI:
+
+```bash
+npm run check
+```
+
 ## Project Structure
 
 ```txt
+/.github/             GitHub workflows, issue templates, and PR template
 content/              Local project and journal content
+docs/                 Contributor, deployment, and maintainer notes
 public/               Public assets and small standalone experiments
 scripts/              Static content generation scripts
 src/components/       Site pages and UI components
@@ -63,6 +75,15 @@ src/data/             Site navigation and content loaders
 src/services/         Optional API clients
 src/utils/            SEO helpers
 ```
+
+## Maintainer Docs
+
+- [Getting started](docs/getting-started.md)
+- [Deployment notes](docs/deployment.md)
+- [Open-source scope](docs/open-source-scope.md)
+- [Server audit summary](docs/server-audit.md)
+- [Maintainer checklist](docs/maintainer-checklist.md)
+- [Security policy](SECURITY.md)
 
 ## New Contributors Are Welcome
 
@@ -89,6 +110,7 @@ Included in this repository:
 - Public static assets
 - Public project and blog content
 - Community docs
+- Sanitized operations notes and maintainer checklists
 
 Not included:
 
@@ -100,6 +122,7 @@ Not included:
 - Third-party API keys
 - Server deployment configuration
 - Private user data
+- Runtime logs, deployment archives, or local backup folders
 
 ## License
 

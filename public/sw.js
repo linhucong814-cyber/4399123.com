@@ -1,4 +1,4 @@
-const CACHE_NAME = "4399123-root-offline-v5";
+const CACHE_NAME = "4399123-root-offline-v7";
 const OFFLINE_URL = "/404notfound/";
 
 const ASSETS = [

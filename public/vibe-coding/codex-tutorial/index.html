@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>如何使用 Codex：从第一次对话到一人公司工作流</title>
+    <meta
+      name="description"
+      content="一份可直接阅读的 Codex 网页教程：如何开始对话、描述任务、让 Codex 执行、检查结果、迭代修复，并把它用于一人公司。"
+    />
+    <link rel="canonical" href="https://4399123.com/vibe-coding/codex-tutorial/" />
+    <meta property="og:site_name" content="4399123" />
+    <meta property="og:title" content="如何使用 Codex：从第一次对话到一人公司工作流" />
+    <meta
+      property="og:description"
+      content="一份可直接阅读的 Codex 网页教程：如何开始对话、描述任务、让 Codex 执行、检查结果、迭代修复，并把它用于一人公司。"
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://4399123.com/vibe-coding/codex-tutorial/" />
+    <meta property="og:image" content="https://4399123.com/vibe-coding/codex-tutorial/assets/codex-workflow.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="progress-bar" aria-hidden="true"><span id="scroll-progress"></span></div>
+
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="回到顶部">
+        <span class="brand-mark">C</span>
+        <span>Codex 教学手册</span>
+      </a>
+      <a class="community-bar" href="https://4399123.com" target="_blank" rel="noreferrer">
+        <span>4399123.com</span>
+        <strong>Vibe Coding 社区</strong>
+      </a>
+      <nav class="top-nav" aria-label="页面导航">
+        <a href="#start">开始对话</a>
+        <a href="#capabilities">能做什么</a>
+        <a href="#workflow">工作方式</a>
+        <a href="#solo">一人公司</a>
+        <a href="#templates">提示词模板</a>
+        <a href="#checklist">检查清单</a>
+        <a class="nav-shortcut" href="https://4399123.com/vibe-coding/agent-prompt-template/" target="_blank" rel="noreferrer">提示词模板生成器</a>
+        <a class="nav-shortcut" href="https://shinemoon.com" target="_blank" rel="noreferrer">中转站</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <img src="assets/codex-workflow.png" alt="桌面上的笔记本电脑展示代码、测试、项目看板和网页预览" />
+        <div class="hero-copy">
+          <p class="eyebrow">从第一句话开始，学会把 Codex 当成工作搭档</p>
+          <h1 id="hero-title">如何使用 Codex</h1>
+          <p class="hero-lede">
+            这不是一篇功能列表，而是一份实战手册：教你怎么开口、怎么给上下文、怎么让 Codex
+            读项目、写代码、查问题、跑测试、审查结果，并把它接入一人公司的完整工作流。
+          </p>
+          <div class="hero-actions">
+            <a class="primary-link" href="#first-message">从第一条消息开始</a>
+            <a class="secondary-link" href="#templates">直接拿模板</a>
+          </div>
+          <dl class="hero-stats" aria-label="教程覆盖内容">
+            <div>
+              <dt>4</dt>
+              <dd>种入口</dd>
+            </div>
+            <div>
+              <dt>12</dt>
+              <dd>个场景</dd>
+            </div>
+            <div>
+              <dt>8</dt>
+              <dd>组模板</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="source-strip" aria-label="官方依据">
+        <p>
+          本页内容结合了 OpenAI Codex 官方资料：
+          <a href="https://developers.openai.com/codex/quickstart" target="_blank" rel="noreferrer">Quickstart</a>、
+          <a href="https://developers.openai.com/codex/learn/best-practices" target="_blank" rel="noreferrer">Best practices</a>、
+          <a href="https://developers.openai.com/codex/prompting" target="_blank" rel="noreferrer">Prompting</a>、
+          <a href="https://developers.openai.com/codex/concepts/sandboxing" target="_blank" rel="noreferrer">Sandboxing</a>。
+        </p>
+      </section>
+
+      <div class="page-shell">
+        <aside class="toc" aria-label="章节目录">
+          <p>目录</p>
+          <a href="#what">1. 什么是 Codex</a>
+          <a href="#start">2. 如何开始对话</a>
+          <a href="#capabilities">3. Codex 能做什么</a>
+          <a href="#workflow">4. 典型工作方式</a>
+          <a href="#solo">5. 一人公司工作流</a>
+          <a href="#templates">6. 高质量模板</a>
+          <a href="#best-practices">7. 最佳实践</a>
+          <a href="#pitfalls">8. 常见错误</a>
+          <a href="#checklist">9. 交付检查</a>
+        </aside>
+
+        <div class="content">
+          <section id="what" class="section" aria-labelledby="what-title">
+            <div class="section-heading">
+              <p class="kicker">第一部分</p>
+              <h2 id="what-title">什么是 Codex</h2>
+              <p>
+                Codex 是面向真实工作的编码代理。它不只是回答问题，还可以在你授权的项目或工作区里读文件、运行命令、修改文件、整理结果，并把工作过程留在同一个线程里。
+              </p>
+            </div>
+
+            <div class="definition-grid">
+              <article class="definition-card accent-teal">
+                <h3>适合解决什么问题</h3>
+                <p>
+                  适合那些需要“理解上下文再行动”的任务：改代码、修 bug、读项目、生成网页、写脚本、整理文档、分析数据、跑测试、做审查、拆产品方案。
+                </p>
+              </article>
+              <article class="definition-card accent-coral">
+                <h3>和普通聊天 AI 的区别</h3>
+                <p>
+                  普通聊天 AI 多数停在建议层；Codex 可以进入工作区，基于文件和命令结果持续执行。你看到的不是一段回答，而是一组可检查的改动、日志和交付文件。
+                </p>
+              </article>
+              <article class="definition-card accent-gold">
+                <h3>它如何理解项目</h3>
+                <p>
+                  它会读取项目结构、配置文件、测试脚本、报错日志、README、设计文档、打开的文件和你提供的任务目标，再把这些信息纳入当前线程。
+                </p>
+              </article>
+            </div>
+
+            <div class="surface-grid" aria-label="Codex 入口">
+              <article>
+                <span class="mini-label">App</span>
+                <h3>桌面应用</h3>
+                <p>适合本地项目、长线程、自动化、图形化审查和日常工作管理。官方 quickstart 推荐新用户可从 App 开始。</p>
+              </article>
+              <article>
+                <span class="mini-label">IDE</span>
+                <h3>编辑器扩展</h3>
+                <p>适合你正在写代码时让 Codex 读当前文件、理解选区、直接修改项目。Agent 模式默认可读文件、运行命令、写改动。</p>
+              </article>
+              <article>
+                <span class="mini-label">CLI</span>
+                <h3>命令行</h3>
+                <p>适合工程师在终端里发任务、查看状态、运行审查、管理配置和自动化流程。</p>
+              </article>
+              <article>
+                <span class="mini-label">Cloud</span>
+                <h3>云端线程</h3>
+                <p>适合把任务委托到远程环境、并行处理、从 GitHub 仓库创建 PR，或让 Codex 在后台跑较长任务。</p>
+              </article>
+            </div>
+
+            <div class="comparison-table" role="table" aria-label="Codex 与普通聊天 AI 对比">
+              <div role="row" class="table-head">
+                <span role="columnheader">维度</span>
+                <span role="columnheader">普通聊天 AI</span>
+                <span role="columnheader">Codex</span>
+              </div>
+              <div role="row">
+                <span role="cell">上下文</span>
+                <span role="cell">主要依赖你粘贴内容</span>
+                <span role="cell">可以读取项目文件、命令输出、历史线程和相关工具上下文</span>
+              </div>
+              <div role="row">
+                <span role="cell">执行</span>
+                <span role="cell">给建议或代码片段</span>
+                <span role="cell">能创建、修改、运行、检查并汇报结果</span>
+              </div>
+              <div role="row">
+                <span role="cell">交付</span>
+                <span role="cell">你自己复制粘贴</span>
+                <span role="cell">直接在工作区生成文件、补测试、跑验证</span>
+              </div>
+              <div role="row">
+                <span role="cell">安全边界</span>
+                <span role="cell">通常不接触本地文件</span>
+                <span role="cell">通过本地、云端、沙盒、批准策略和 Git 检查点控制权限</span>
+              </div>
+            </div>
+
+            <div class="audience-band">
+              <h3>适合谁用</h3>
+              <ul class="chip-list" aria-label="适合用户">
+                <li>开发者</li>
+                <li>创业者</li>
+                <li>产品经理</li>
+                <li>设计师</li>
+                <li>内容创作者</li>
+                <li>运营人员</li>
+                <li>数据分析师</li>
+                <li>一人公司</li>
+              </ul>
+            </div>
+
+            <div class="concept-explainers" aria-label="重要概念解释">
+              <article id="sandbox-explainer">
+                <span class="mini-label">安全边界</span>
+                <h3>Codex 在沙箱运行是什么意思</h3>
+                <p>
+                  沙箱可以理解为给 Codex 划出的“可行动范围”。Codex 不是天然拥有整台电脑的无限权限，
+                  它会根据当前配置决定能读哪里、能写哪里、能不能联网、运行命令前是否要先问你。
+                </p>
+                <ul>
+                  <li><strong>只读：</strong>适合先理解项目，Codex 可以检查文件，但不能直接改。</li>
+                  <li><strong>工作区写入：</strong>适合日常开发，Codex 可以在当前项目内读写并运行常规命令。</li>
+                  <li><strong>完全访问：</strong>限制最少，只适合你明确信任任务和环境时使用。</li>
+                </ul>
+                <p>
+                  新手可以记住一句话：先让 Codex 在安全范围里读项目、给方案、等你批准，再让它动手。
+                </p>
+              </article>
+
+              <article id="relay-api-explainer">
+                <span class="mini-label">API 代理层</span>
+                <h3>什么是中转站 API</h3>
+                <p>
+                  中转站 API 通常指放在你的应用和上游模型 API 之间的一层转发服务。你的程序请求中转站，
+                  中转站再把请求转给模型服务，并把结果返回给你。
+                </p>
+                <ul>
+                  <li><strong>可能用途：</strong>统一接口地址、隐藏上游密钥、做模型路由、统计用量、限流或备用切换。</li>
+                  <li><strong>常见形式：</strong>把客户端里的 API base URL 改成中转站地址，再使用中转站提供的 key。</li>
+                  <li><strong>注意事项：</strong>它不是 OpenAI 官方 API。生产使用前要确认服务商信誉、隐私政策、计费规则、模型来源和合规风险。</li>
+                </ul>
+                <p>
+                  如果请求里包含用户隐私、商业数据或源代码，先确认中转站是否可信；不确定时，不要把敏感数据发给陌生中转服务。
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section id="start" class="section" aria-labelledby="start-title">
+            <div class="section-heading">
+              <p class="kicker">第二部分</p>
+              <h2 id="start-title">如何开始第一次对话</h2>
+              <p>
+                第一次对话不要追求完美。先告诉 Codex 你要达成什么、它可以看哪里、有什么限制、什么结果算完成。它会边读上下文边推进。
+              </p>
+            </div>
+
+            <div id="first-message" class="first-message-card">
+              <div>
+                <span class="step-number">01</span>
+                <h3>新手第一句话</h3>
+                <p>如果你还不知道怎么说，直接让 Codex 先读项目，而不是立刻要求它改。</p>
+              </div>
+              <pre><code>请先阅读这个项目，告诉我：
+1. 它是做什么的
+2. 主要技术栈和目录结构
+3. 启动、测试、构建命令
+4. 你建议我从哪里开始修改
+
+先不要改文件，只做理解和汇报。</code></pre>
+            </div>
+
+            <div class="prompt-anatomy">
+              <article>
+                <h3>目标</h3>
+                <p>一句话说清你要什么结果。比如“修复登录页移动端按钮溢出”。</p>
+              </article>
+              <article>
+                <h3>背景</h3>
+                <p>告诉它业务、用户、技术栈、相关文件、错误日志、已尝试过的方法。</p>
+              </article>
+              <article>
+                <h3>限制</h3>
+                <p>说明不要碰哪些文件、不要新增依赖、保持现有风格、先计划后执行。</p>
+              </article>
+              <article>
+                <h3>完成标准</h3>
+                <p>告诉它“跑过哪些测试”“页面没有溢出”“生成文件放在哪里”。</p>
+              </article>
+            </div>
+
+            <div class="good-bad">
+              <article class="bad">
+                <h3>不好的提示词</h3>
+                <pre><code>帮我优化一下这个项目。</code></pre>
+                <p>问题：目标模糊、范围太大、没有上下文、没有完成标准，Codex 只能猜。</p>
+              </article>
+              <article class="good">
+                <h3>更好的提示词</h3>
+                <pre><code>请检查这个 Next.js 项目的首页性能。
+范围：只看 app/page.tsx、components/ 和图片资源。
+目标：找出影响首屏加载的 3 个主要原因。
+先给我检查结果和修改方案，不要直接改。
+如果我批准，再做最小改动，并跑 lint/build 验证。</code></pre>
+                <p>优点：目标、范围、执行权限、验证方式都清楚。</p>
+              </article>
+            </div>
+
+            <div class="callout">
+              <h3>一个关键习惯</h3>
+              <p>
+                当你不确定怎么拆任务时，可以让 Codex 先采访你：“请先问我最多 5 个问题，把我的模糊想法整理成可执行计划，再等我确认。”
+                这比一上来让它做完整项目更可靠。
+              </p>
+            </div>
+          </section>
+
+          <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+            <div class="section-heading">
+              <p class="kicker">第三部分</p>
+              <h2 id="capabilities-title">Codex 可以帮你做什么</h2>
+              <p>
+                下面按真实场景理解，而不是按“功能按钮”理解。你给它任务、上下文和完成标准，它就能帮你把一段工作推进到可检查状态。
+              </p>
+            </div>
+
+            <div class="capability-grid">
+              <article>
+                <h3>写代码、改代码、重构</h3>
+                <p>新增页面、组件、API、脚本，或把重复逻辑抽成函数。适合明确目标、影响范围和代码风格。</p>
+                <span>例：把设置页拆成可复用表单组件，并保持现有 UI。</span>
+              </article>
+              <article>
+                <h3>找 bug、修 bug、解释报错</h3>
+                <p>让它先复现失败，再定位最小文件集合，最后做高置信度修复。</p>
+                <span>例：根据堆栈日志修复支付回调偶发 500。</span>
+              </article>
+              <article>
+                <h3>写测试、跑测试</h3>
+                <p>补单元测试、集成测试、端到端测试，并分析失败原因。</p>
+                <span>例：给订单状态机补 8 个边界测试。</span>
+              </article>
+              <article>
+                <h3>阅读大型项目</h3>
+                <p>总结架构、关键流程、模块依赖、启动方式、风险点和改动入口。</p>
+                <span>例：说明这个 monorepo 的前后端数据流。</span>
+              </article>
+              <article>
+                <h3>生成网页、App、工具</h3>
+                <p>从需求生成可打开的网页、内部工具、表单、看板、小型应用。</p>
+                <span>例：做一个本地可预览的定价计算器。</span>
+              </article>
+              <article>
+                <h3>处理数据和文档</h3>
+                <p>整理 CSV、表格、报告、README、PRD、技术方案、教程和变更说明。</p>
+                <span>例：把用户反馈表归类并生成优先级清单。</span>
+              </article>
+              <article>
+                <h3>处理图片、音视频</h3>
+                <p>生成素材、转码、压缩、抽取音频、转写会议、做字幕或内容摘要。</p>
+                <span>例：把访谈视频转成文章初稿和短视频脚本。</span>
+              </article>
+              <article>
+                <h3>自动化日常工作</h3>
+                <p>写脚本、定时检查、生成周报、扫描 CI、整理发布说明。</p>
+                <span>例：每天汇总昨天的提交和待办风险。</span>
+              </article>
+              <article>
+                <h3>市场、运营、销售、客服</h3>
+                <p>不是只写文案，而是把产品上下文、用户画像和数据一起纳入任务。</p>
+                <span>例：从功能更新生成邮件、X 帖、FAQ 和客服话术。</span>
+              </article>
+              <article>
+                <h3>把想法变成 MVP</h3>
+                <p>从想法澄清、竞品调研、功能拆解、原型页面、上线清单到迭代计划。</p>
+                <span>例：把“AI 简历助手”拆成首周可上线版本。</span>
+              </article>
+            </div>
+          </section>
+
+          <section id="workflow" class="section" aria-labelledby="workflow-title">
+            <div class="section-heading">
+              <p class="kicker">第四部分</p>
+              <h2 id="workflow-title">Codex 的典型工作方式</h2>
+              <p>
+                最可靠的使用方式不是“说一句，等奇迹”，而是让 Codex 按工程流程前进：理解、计划、实现、验证、修复、交付。
+              </p>
+            </div>
+
+            <div class="workflow-map" aria-label="从需求到交付的流程">
+              <article>
+                <span>1</span>
+                <h3>需求</h3>
+                <p>你说目标、背景、范围、约束和完成标准。</p>
+              </article>
+              <article>
+                <span>2</span>
+                <h3>方案</h3>
+                <p>Codex 读文件、识别风险、提出执行计划。</p>
+              </article>
+              <article>
+                <span>3</span>
+                <h3>实现</h3>
+                <p>在限定范围内修改文件，保持项目风格。</p>
+              </article>
+              <article>
+                <span>4</span>
+                <h3>测试</h3>
+                <p>运行 lint、类型检查、单测、构建或手动验证。</p>
+              </article>
+              <article>
+                <span>5</span>
+                <h3>修复</h3>
+                <p>根据失败日志做最小改动，直到验证通过。</p>
+              </article>
+              <article>
+                <span>6</span>
+                <h3>交付</h3>
+                <p>汇报改动、证据、风险、文件位置和后续建议。</p>
+              </article>
+            </div>
+
+            <div class="review-loop">
+              <h3>你应该怎么审查它的结果</h3>
+              <ol>
+                <li>先看最终摘要：它改了什么、为什么改、验证了什么。</li>
+                <li>再看 diff：有没有改到无关文件、有没有新增不必要依赖。</li>
+                <li>再看验证证据：测试命令是否真的运行，失败是否被解释清楚。</li>
+                <li>最后给第二轮指令：保留好的部分，指出要调整的地方。</li>
+              </ol>
+            </div>
+          </section>
+
+          <section id="solo" class="section" aria-labelledby="solo-title">
+            <div class="section-heading">
+              <p class="kicker">第五部分</p>
+              <h2 id="solo-title">一人公司如何使用 Codex</h2>
+              <p>
+                一人公司最大的瓶颈不是想法，而是连续执行能力。Codex 的价值在于把“一个人的脑子”扩展成一套可重复的工作流。
+              </p>
+            </div>
+
+            <div class="solo-roles">
+              <article>
+                <h3>技术合伙人</h3>
+                <p>帮你评估技术路线、搭 MVP、修 bug、补测试、做部署检查。</p>
+              </article>
+              <article>
+                <h3>产品助理</h3>
+                <p>把模糊想法变成 PRD、用户故事、验收标准和迭代路线。</p>
+              </article>
+              <article>
+                <h3>运营助理</h3>
+                <p>整理用户反馈、生成活动方案、做增长实验和复盘表。</p>
+              </article>
+              <article>
+                <h3>内容团队</h3>
+                <p>从产品更新生成教程、邮件、社媒帖、FAQ、视频脚本。</p>
+              </article>
+              <article>
+                <h3>数据分析师</h3>
+                <p>清洗数据、找趋势、输出决策建议和可视化报告。</p>
+              </article>
+              <article>
+                <h3>自动化工程师</h3>
+                <p>把重复任务脚本化、技能化、自动化，减少手工操作。</p>
+              </article>
+            </div>
+
+            <div class="solo-loop">
+              <div class="solo-loop-copy">
+                <h3>一人公司的闭环</h3>
+                <p>
+                  一个可执行的闭环是：想法澄清、调研验证、产品拆解、原型实现、页面和文案、发布准备、数据回收、下一轮迭代。
+                  你不需要一次把所有事情做完，只要让 Codex 每次推进一个明确节点。
+                </p>
+              </div>
+              <div class="loop-steps" aria-label="一人公司闭环步骤">
+                <span>想法</span>
+                <span>调研</span>
+                <span>产品</span>
+                <span>MVP</span>
+                <span>页面</span>
+                <span>发布</span>
+                <span>数据</span>
+                <span>迭代</span>
+              </div>
+            </div>
+
+            <div class="scenario-panel">
+              <h3>示例：从一句想法到第一版产品</h3>
+              <div class="scenario-grid">
+                <article>
+                  <span>第 1 天</span>
+                  <p>让 Codex 采访你，把想法整理成目标用户、核心痛点、MVP 功能和不做清单。</p>
+                </article>
+                <article>
+                  <span>第 2 天</span>
+                  <p>让 Codex 做轻量竞品和定位分析，形成一页产品方案。</p>
+                </article>
+                <article>
+                  <span>第 3-4 天</span>
+                  <p>让 Codex 生成原型网页、后端脚本、数据结构和基础测试。</p>
+                </article>
+                <article>
+                  <span>第 5 天</span>
+                  <p>让 Codex 写发布文案、FAQ、用户反馈表和第一轮迭代清单。</p>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section id="templates" class="section" aria-labelledby="templates-title">
+            <div class="section-heading">
+              <p class="kicker">第六部分</p>
+              <h2 id="templates-title">高质量提示词模板</h2>
+              <p>
+                直接复制使用。模板的关键不是华丽，而是把目标、上下文、范围、权限和完成标准写清楚。
+              </p>
+            </div>
+
+            <div class="template-filters" role="group" aria-label="筛选模板">
+              <button class="filter-button active" type="button" data-filter="all">全部</button>
+              <button class="filter-button" type="button" data-filter="project">理解项目</button>
+              <button class="filter-button" type="button" data-filter="code">代码任务</button>
+              <button class="filter-button" type="button" data-filter="solo">一人公司</button>
+            </div>
+
+            <div class="template-grid">
+              <article class="template-card" data-category="project">
+                <div class="template-head">
+                  <h3>让 Codex 理解项目</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-context" aria-label="复制让 Codex 理解项目的模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-context"><code>请先阅读这个项目并建立上下文。
+
+请输出：
+1. 项目用途和主要用户
+2. 技术栈、目录结构、关键入口文件
+3. 启动、测试、构建、部署命令
+4. 重要约定和潜在风险
+5. 如果我要继续开发，你建议我先看哪些文件
+
+限制：
+- 先不要修改文件
+- 不确定的地方请标注“已确认/推测/需要我补充”</code></pre>
+              </article>
+
+              <article class="template-card" data-category="project">
+                <div class="template-head">
+                  <h3>让 Codex 制定计划</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-plan" aria-label="复制制定计划模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-plan"><code>我想完成这个目标：[写清目标]。
+
+请你先不要执行，先做计划：
+1. 需要阅读哪些文件或资料
+2. 你会分成哪几个步骤
+3. 每一步会产生什么交付
+4. 可能的风险和需要我确认的问题
+5. 验证方式是什么
+
+请把计划写得具体，等我批准后再执行。</code></pre>
+              </article>
+
+              <article class="template-card" data-category="code">
+                <div class="template-head">
+                  <h3>让 Codex 修改代码</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-code" aria-label="复制修改代码模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-code"><code>请帮我修改代码，实现：[具体功能或修复目标]。
+
+范围：
+- 优先查看：[相关文件/目录]
+- 尽量不要改：[不相关文件/模块]
+- 不新增依赖，除非你先说明原因并等我确认
+
+要求：
+- 遵循现有代码风格
+- 做最小必要改动
+- 如果有测试体系，请补充或更新测试
+- 完成后运行相关检查，并汇报命令和结果</code></pre>
+              </article>
+
+              <article class="template-card" data-category="code">
+                <div class="template-head">
+                  <h3>让 Codex 做网页</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-web" aria-label="复制做网页模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-web"><code>请制作一个可以本地打开的网页，主题是：[主题]。
+
+内容要求：
+- 受众：[新手/客户/团队/投资人]
+- 必须包含：[列出章节]
+- 内容要具体可操作，不要空泛宣传
+
+设计要求：
+- 清爽、现代、专业
+- 桌面端和移动端都要好看
+- 有导航、章节、示例、表格或步骤卡片
+- 如有按钮或交互，必须可用
+
+交付：
+- 创建完整网页文件
+- 告诉我文件位置和打开方式
+- 检查排版、移动端、文字溢出和交互可用性</code></pre>
+              </article>
+
+              <article class="template-card" data-category="code">
+                <div class="template-head">
+                  <h3>让 Codex 检查 bug</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-bug" aria-label="复制检查 bug 模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-bug"><code>请帮我定位并修复这个 bug。
+
+现象：
+[粘贴错误信息、截图描述、复现步骤]
+
+请按这个方法执行：
+1. 先尝试复现或从日志定位
+2. 找出最小相关文件集合
+3. 说明根因和修复方案
+4. 等我批准后再改代码
+5. 修复后补充测试或复现检查
+
+限制：
+- 不要做无关重构
+- 不要把猜测当结论
+- 如果无法复现，请说明还缺什么信息</code></pre>
+              </article>
+
+              <article class="template-card" data-category="code">
+                <div class="template-head">
+                  <h3>让 Codex 写测试</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-test" aria-label="复制写测试模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-test"><code>请为这个功能补测试：[功能名称或文件]。
+
+请先阅读现有测试风格，然后补充：
+1. 正常路径
+2. 边界情况
+3. 错误情况
+4. 回归测试，覆盖之前出现的问题
+
+要求：
+- 使用项目已有测试框架
+- 不为了测试而改业务逻辑，除非发现可测试性问题并先汇报
+- 完成后运行相关测试并解释结果</code></pre>
+              </article>
+
+              <article class="template-card" data-category="solo">
+                <div class="template-head">
+                  <h3>一人公司任务拆解</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-solo" aria-label="复制一人公司任务拆解模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-solo"><code>我现在是一个人做这个项目：[项目/想法]。
+
+请你像一人公司的运营合伙人一样帮我拆解：
+1. 目标用户和核心痛点
+2. 最小可行产品版本
+3. 本周必须完成的 5 件事
+4. 可以暂时不做的事情
+5. 需要 Codex 执行的技术任务
+6. 需要我本人决策或确认的事情
+7. 发布前检查清单
+
+请用可执行任务列表输出，而不是泛泛建议。</code></pre>
+              </article>
+
+              <article class="template-card" data-category="project">
+                <div class="template-head">
+                  <h3>执行前先汇报方案</h3>
+                  <button class="copy-button" type="button" data-copy-target="#tpl-approve" aria-label="复制执行前汇报方案模板">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 8h10v12H8z"></path><path d="M6 16H4V4h12v2"></path></svg>
+                    复制
+                  </button>
+                </div>
+                <pre id="tpl-approve"><code>请先检查并制定执行方案，不要直接修改。
+
+你需要汇报：
+1. 你检查了哪些文件或证据
+2. 你发现的问题
+3. 你建议的修复方案
+4. 影响范围和风险
+5. 验证方式
+
+等我明确批准后，再按方案执行。</code></pre>
+              </article>
+            </div>
+            <p class="copy-status" id="copy-status" aria-live="polite"></p>
+          </section>
+
+          <section id="best-practices" class="section" aria-labelledby="best-practices-title">
+            <div class="section-heading">
+              <p class="kicker">第七部分</p>
+              <h2 id="best-practices-title">使用 Codex 的最佳实践</h2>
+              <p>
+                这些习惯会显著提高结果稳定性，尤其是当任务涉及已有代码、业务规则、多人协作或高成本操作时。
+              </p>
+            </div>
+
+            <div class="practice-list">
+              <article>
+                <h3>把任务说清楚</h3>
+                <p>用“目标、上下文、限制、完成标准”四段式描述。复杂任务先让 Codex 采访你。</p>
+              </article>
+              <article>
+                <h3>限制范围</h3>
+                <p>说明优先看哪些文件、不要碰哪些模块、是否允许新增依赖、是否允许重构。</p>
+              </article>
+              <article>
+                <h3>先检查再修改</h3>
+                <p>高风险任务要求先读、先汇报方案，得到批准再执行。</p>
+              </article>
+              <article>
+                <h3>保护已有代码</h3>
+                <p>用 Git 检查点、diff 审查、测试验证。不要让多个线程同时改同一批文件。</p>
+              </article>
+              <article>
+                <h3>要求每一步汇报</h3>
+                <p>对长任务要求它在关键节点报告：已读什么、准备改什么、验证了什么。</p>
+              </article>
+              <article>
+                <h3>给出可验证结果</h3>
+                <p>让 Codex 运行测试、构建、lint、页面截图或手动检查，并说明无法验证的部分。</p>
+              </article>
+              <article>
+                <h3>保存交付文件</h3>
+                <p>明确输出位置、文件名、格式和打开方式。比如“放到 outputs 目录”。</p>
+              </article>
+              <article>
+                <h3>处理不确定信息</h3>
+                <p>要求它区分“已确认、推测、需要你补充”。这能减少看起来很自信的误判。</p>
+              </article>
+            </div>
+
+            <div class="config-note">
+              <h3>权限和安全边界</h3>
+              <p>
+                Codex 可以通过沙盒和批准策略控制行动范围。新手建议从默认权限开始；更强权限只给可信项目和明确任务。
+                官方文档把常见沙盒分为只读、工作区写入和完全访问，把批准策略分为需要批准、按请求批准和不暂停批准。
+              </p>
+            </div>
+          </section>
+
+          <section id="pitfalls" class="section" aria-labelledby="pitfalls-title">
+            <div class="section-heading">
+              <p class="kicker">第八部分</p>
+              <h2 id="pitfalls-title">常见错误和避坑</h2>
+            </div>
+
+            <div class="pitfall-grid">
+              <article>
+                <h3>需求太模糊</h3>
+                <p>不要说“优化一下”，要说优化哪个指标、哪个页面、怎样算完成。</p>
+              </article>
+              <article>
+                <h3>一次要求太多</h3>
+                <p>把大任务拆成阶段。先做理解和计划，再做实现和验证。</p>
+              </article>
+              <article>
+                <h3>没有提供上下文</h3>
+                <p>给相关文件、错误日志、业务背景、期望行为和反例。</p>
+              </article>
+              <article>
+                <h3>不看结果直接相信</h3>
+                <p>始终看 diff、运行结果和风险说明。Codex 是搭档，不是免审机制。</p>
+              </article>
+              <article>
+                <h3>没有要求测试</h3>
+                <p>只改代码不验证，等于把风险推迟到上线后。</p>
+              </article>
+              <article>
+                <h3>没有要求方案先行</h3>
+                <p>涉及删除、迁移、大重构、依赖升级时，先让它报告方案。</p>
+              </article>
+              <article>
+                <h3>混淆咨询和执行</h3>
+                <p>想讨论就说“只分析不要改”；想执行就说“请实现并验证”。</p>
+              </article>
+              <article>
+                <h3>长期规则只放在提示词里</h3>
+                <p>反复使用的规则应该沉淀到 AGENTS.md、技能或自动化里。</p>
+              </article>
+            </div>
+          </section>
+
+          <section id="checklist" class="section" aria-labelledby="checklist-title">
+            <div class="section-heading">
+              <p class="kicker">第九部分</p>
+              <h2 id="checklist-title">交付前检查清单</h2>
+              <p>每次让 Codex 做完工作，都可以用这张清单做最后验收。</p>
+            </div>
+
+            <div class="checklist-grid">
+              <label><input type="checkbox" /> 目标是否被完整满足</label>
+              <label><input type="checkbox" /> 改动范围是否符合约束</label>
+              <label><input type="checkbox" /> 是否有无关重构或新增依赖</label>
+              <label><input type="checkbox" /> 是否运行了合适的测试或检查</label>
+              <label><input type="checkbox" /> 是否说明了无法验证的部分</label>
+              <label><input type="checkbox" /> 生成文件是否在指定位置</label>
+              <label><input type="checkbox" /> 移动端和桌面端是否都可用</label>
+              <label><input type="checkbox" /> 下一步风险是否清楚</label>
+            </div>
+
+            <div class="final-card">
+              <h3>最短可用公式</h3>
+              <p>
+                “请先理解上下文，制定方案，等我批准后做最小改动，完成后运行验证并汇报结果。”
+                这句话能覆盖大多数高质量协作场景。
+              </p>
+            </div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <p>Codex 教学手册。本地静态网页，可直接打开阅读。</p>
+      <a href="#top">回到顶部</a>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>

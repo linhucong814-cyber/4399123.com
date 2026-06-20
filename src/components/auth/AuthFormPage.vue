@@ -1,18 +1,18 @@
 <template>
-  <section class="auth-page">
+  <section class="auth-page auth-form-page">
     <div class="section-head blog-page-head">
       <div>
         <p class="eyebrow">Account</p>
         <h2>{{ isRegister ? "注册" : "登录" }}</h2>
       </div>
-      <a class="secondary-link compact-action" :href="isRegister ? '/login' : '/register'">
+      <a class="secondary-link compact-action" :href="switchAuthHref">
         {{ isRegister ? "已有账号" : "创建账号" }}
       </a>
     </div>
 
     <form class="auth-panel" @submit.prevent="submit">
       <p class="auth-lead">
-        这套账号会用于 4399123.com 下的 Vibe Coding 项目，登录态通过同域 Cookie 共享。
+        使用 4399123.com 统一账号进入社区、作品分享和个人后台。
       </p>
 
       <label v-if="isRegister" class="field-label">
@@ -35,17 +35,15 @@
         <input v-model="form.password" type="password" autocomplete="current-password" required minlength="8" />
       </label>
 
-      <label v-if="isRegister" class="field-label">
-        注册来源
-        <input v-model.trim="form.sourceProject" maxlength="80" />
-      </label>
-
       <p v-if="error" class="form-message error-state">{{ error }}</p>
       <p v-if="success" class="form-message">{{ success }}</p>
 
       <button class="primary-link auth-submit" type="submit" :disabled="isSubmitting">
-        {{ isSubmitting ? "提交中..." : isRegister ? "注册并登录" : "登录" }}
+        {{ isSubmitting ? "提交中..." : isRegister ? "注册" : "登录" }}
       </button>
+      <div class="auth-secondary-actions">
+        <a :href="switchAuthHref">{{ isRegister ? "使用已有账号登录" : "没有账号？创建一个" }}</a>
+      </div>
     </form>
   </section>
 </template>
@@ -72,6 +70,16 @@ const form = reactive({
   password: "",
   sourceProject: "4399123.com",
 });
+const redirectTarget = computed(() => {
+  const next = new URLSearchParams(window.location.search).get("next") || "";
+  if (!next.startsWith("/") || next.startsWith("//")) return "/account";
+  return next;
+});
+const switchAuthHref = computed(() => {
+  const base = isRegister.value ? "/login" : "/register";
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next ? `${base}?next=${encodeURIComponent(next)}` : base;
+});
 
 watchEffect(() => {
   setPageSeo({
@@ -96,17 +104,18 @@ async function submit() {
         username: form.username,
         email: form.identifier,
         password: form.password,
-        sourceProject: form.sourceProject || "4399123.com",
+        sourceProject: "4399123.com",
       });
       success.value = "注册成功，正在进入账号页。";
+      window.location.href = redirectTarget.value;
     } else {
       await loginUser({
         identifier: form.identifier,
         password: form.password,
       });
       success.value = "登录成功，正在进入账号页。";
+      window.location.href = redirectTarget.value;
     }
-    window.location.href = "/account";
   } catch (err) {
     error.value = err.message || "操作失败。";
   } finally {

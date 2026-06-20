@@ -16,6 +16,9 @@
 - Add beginner FAQ
 - Mark good first issues
 - Add contribution examples for content-only contributors
+- Add CI build verification
+- Document static deployment and maintainer release checks
+- Keep a sanitized server audit note for public/private boundary decisions
 
 ## Phase 3: Grow The Community Library
 

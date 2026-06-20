@@ -1,0 +1,13 @@
+{
+  "title": "Agent 提示词模板生成器",
+  "slug": "agent-prompt-template",
+  "date": "2026-05-30",
+  "summary": "一个把自然语言需求实时整理成 Agent 可复制提示词的小工具，内置检查与批准后执行的固定结尾。",
+  "tags": ["Agent", "Prompt", "提示词", "小工具"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/agent-prompt-template/",
+  "eyebrow": "Vibe Coding / 013",
+  "actionLabel": "打开模板生成器",
+  "body": ["输入想交给 Agent 的任务内容，即可生成一段完整中文提示词，并支持一键复制和清空重写。"]
+}

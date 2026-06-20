@@ -46,8 +46,9 @@
 
     <div v-else class="blog-grid">
       <a
-        v-for="post in posts"
+        v-for="(post, index) in posts"
         :key="post.id"
+        v-reveal="index"
         class="blog-card"
         :href="postHref(post)"
       >
@@ -116,6 +117,7 @@
 import { computed, onMounted, ref, watch, watchEffect } from "vue";
 import { localBlogPosts } from "../data/content";
 import { getCurrentUser, loginUser, logoutUser } from "../services/auth";
+import { getCsrfToken } from "../services/csrf";
 import { setPageSeo } from "../utils/seo";
 
 const props = defineProps({
@@ -335,10 +337,14 @@ async function submitComment() {
   commentStatus.value = "";
 
   try {
+    const csrfToken = await getCsrfToken();
     const response = await fetch("/api/blog/comments", {
       method: "POST",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
+      },
       body: JSON.stringify({ post: activeCommentPost.value, body }),
     });
     const data = await response.json();

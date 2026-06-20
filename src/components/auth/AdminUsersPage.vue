@@ -26,7 +26,10 @@
         <tbody>
           <tr v-for="item in users" :key="item.id">
             <td>{{ item.id }}</td>
-            <td>{{ item.username }}</td>
+            <td>
+              <a v-if="item.status !== 'disabled'" class="admin-user-link" :href="publicProfileHref(item)">{{ item.username }}</a>
+              <span v-else>{{ item.username }}</span>
+            </td>
             <td>{{ item.email }}</td>
             <td>{{ formatTime(item.registeredAt) }}</td>
             <td>{{ formatTime(item.lastLoginAt) }}</td>
@@ -69,5 +72,9 @@ onMounted(async () => {
 function formatTime(value) {
   if (!value) return "暂无";
   return new Date(value).toLocaleString("zh-CN", { hour12: false });
+}
+
+function publicProfileHref(user) {
+  return user?.id ? `/users/${encodeURIComponent(user.id)}` : "/admin/users";
 }
 </script>

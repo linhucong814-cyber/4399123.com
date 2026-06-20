@@ -1,0 +1,43 @@
+name: Bug report
+description: Report a problem with the public front-end, docs, or content.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping improve 4399123.com. Please do not include passwords, tokens, private user data, or server credentials.
+  - type: input
+    id: page
+    attributes:
+      label: Affected page
+      description: Which URL or route has the problem?
+      placeholder: https://4399123.com/vibe-coding
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the issue clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+  - type: dropdown
+    id: device
+    attributes:
+      label: Where did you see it?
+      options:
+        - Desktop browser
+        - Mobile browser
+        - Local development
+        - Production site
+    validations:
+      required: false

@@ -1,13 +1,17 @@
+import { getCsrfToken, isUnsafeMethod } from "./csrf";
+
 const apiBase = (import.meta.env.VITE_AUTH_API_BASE || "").replace(/\/$/, "");
 
 async function request(path, options = {}) {
   const isFormData = options.body instanceof FormData;
+  const csrfToken = isUnsafeMethod(options.method) ? await getCsrfToken() : "";
   const response = await fetch(`${apiBase}${path}`, {
     credentials: "include",
     headers: isFormData
-      ? { ...(options.headers || {}) }
+      ? { ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}), ...(options.headers || {}) }
       : {
           "Content-Type": "application/json",
+          ...(csrfToken ? { "X-CSRFToken": csrfToken } : {}),
           ...(options.headers || {}),
         },
     ...options,
@@ -15,20 +19,61 @@ async function request(path, options = {}) {
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data.error || "请求失败");
+    const error = new Error(data.error || "请求失败");
+    error.status = response.status;
+    error.code = data.code || "request_failed";
+    error.details = data;
+    throw error;
   }
   return data;
 }
 
-export function getCommunityPosts(channel = "all") {
+export function getCommunityPosts(channel = "all", sort = "latest", feed = "recommended") {
   const params = new URLSearchParams();
   if (channel && channel !== "all") params.set("channel", channel);
+  if (sort && sort !== "latest") params.set("sort", sort);
+  if (feed && feed !== "recommended") params.set("feed", feed);
   const suffix = params.toString() ? `?${params.toString()}` : "";
   return request(`/api/community/posts${suffix}`);
 }
 
 export function getCommunityPost(id) {
   return request(`/api/community/posts/${encodeURIComponent(id)}`);
+}
+
+export function getCommunityUser(id) {
+  return request(`/api/community/users/${encodeURIComponent(id)}`);
+}
+
+export function getCommunityUserPosts(id) {
+  return request(`/api/community/users/${encodeURIComponent(id)}/posts`);
+}
+
+export function getCommunityUserActivity(id) {
+  return request(`/api/community/users/${encodeURIComponent(id)}/activity`);
+}
+
+export function toggleCommunityUserFollow(id) {
+  return request(`/api/community/users/${encodeURIComponent(id)}/follow`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function getCommunitySocialSummary() {
+  return request("/api/community/social-summary");
+}
+
+export function getCommunityTopics() {
+  return request("/api/community/topics");
+}
+
+export function searchCommunityMentionUsers(query = "") {
+  const params = new URLSearchParams();
+  const normalized = String(query || "").trim().replace(/^@+/, "");
+  if (normalized) params.set("q", normalized);
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return request(`/api/community/mention-users${suffix}`);
 }
 
 export function createCommunityPost(payload) {
@@ -54,14 +99,42 @@ export function deleteCommunityPost(id) {
 }
 
 export function createCommunityReply(postId, payload) {
+  const isFormData = payload instanceof FormData;
   return request(`/api/community/posts/${encodeURIComponent(postId)}/replies`, {
     method: "POST",
+    body: isFormData ? payload : JSON.stringify(payload),
+  });
+}
+
+export function updateCommunityReply(replyId, payload) {
+  return request(`/api/community/replies/${encodeURIComponent(replyId)}`, {
+    method: "PATCH",
     body: JSON.stringify(payload),
+  });
+}
+
+export function deleteCommunityReply(replyId) {
+  return request(`/api/community/replies/${encodeURIComponent(replyId)}`, {
+    method: "DELETE",
   });
 }
 
 export function toggleCommunityPostLike(postId) {
   return request(`/api/community/posts/${encodeURIComponent(postId)}/like`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function toggleCommunityPostBookmark(postId) {
+  return request(`/api/community/posts/${encodeURIComponent(postId)}/bookmark`, {
+    method: "POST",
+    body: JSON.stringify({}),
+  });
+}
+
+export function recordCommunityPostShare(postId) {
+  return request(`/api/community/posts/${encodeURIComponent(postId)}/share`, {
     method: "POST",
     body: JSON.stringify({}),
   });

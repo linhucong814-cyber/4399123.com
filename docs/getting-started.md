@@ -5,7 +5,7 @@ This guide is for people opening the project for the first time.
 ## Run Locally
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
@@ -51,3 +51,11 @@ dist/
 ```
 
 `dist/` is not committed because it is generated.
+
+## Before Publishing
+
+```bash
+npm run check
+```
+
+Then review `git diff` and confirm no secrets, `.env` files, logs, databases, or private server files were added.

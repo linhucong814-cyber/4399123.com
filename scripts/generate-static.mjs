@@ -5,7 +5,8 @@ import { absoluteUrl, contentUrl, readContent, siteDescription, siteUrl } from "
 const root = process.cwd();
 const publicDir = path.join(root, "public");
 const items = await readContent(root);
-const now = new Date().toISOString();
+const siteLastModified = [items[0]?.date, "2026-05-18"].filter(Boolean).sort().at(-1);
+const lastBuildDate = new Date(`${siteLastModified}T00:00:00.000Z`).toUTCString();
 
 await fs.mkdir(publicDir, { recursive: true });
 
@@ -14,6 +15,7 @@ const publicPaths = [
   { loc: "/blog", priority: "0.8", changefreq: "weekly" },
   { loc: "/community", priority: "0.8", changefreq: "daily" },
   { loc: "/vibe-coding", priority: "0.8", changefreq: "weekly" },
+  { loc: "/help", priority: "0.5", changefreq: "monthly" },
   { loc: "/404notfound/", priority: "0.2", changefreq: "yearly" },
   ...items.map((item) => ({
     loc: contentUrl(item),
@@ -46,7 +48,7 @@ await fs.writeFile(
       [
         "  <url>",
         `    <loc>${absoluteUrl(entry.loc)}</loc>`,
-        `    <lastmod>${entry.lastmod || now.slice(0, 10)}</lastmod>`,
+        `    <lastmod>${entry.lastmod || siteLastModified}</lastmod>`,
         `    <changefreq>${entry.changefreq}</changefreq>`,
         `    <priority>${entry.priority}</priority>`,
         "  </url>",
@@ -67,7 +69,7 @@ await fs.writeFile(
     `    <link>${siteUrl}</link>`,
     `    <description>${siteDescription}</description>`,
     "    <language>zh-CN</language>",
-    `    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>`,
+    `    <lastBuildDate>${lastBuildDate}</lastBuildDate>`,
     `    <atom:link href="${siteUrl}/rss.xml" rel="self" type="application/rss+xml" />`,
     ...items
       .filter((item) => item.category !== "projects")

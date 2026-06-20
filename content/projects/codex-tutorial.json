@@ -1,0 +1,16 @@
+{
+  "title": "如何使用 Codex 教学手册",
+  "slug": "codex-tutorial",
+  "date": "2026-05-31",
+  "summary": "一份从第一次对话开始的 Codex 实战网页教程，覆盖项目理解、任务执行、检查验证、提示词模板和一人公司工作流。",
+  "tags": ["Codex", "教程", "一人公司", "Agent"],
+  "category": "projects",
+  "cover": "/vibe-coding/codex-tutorial/assets/codex-workflow.png",
+  "href": "/vibe-coding/codex-tutorial/",
+  "eyebrow": "Vibe Coding / 011",
+  "actionLabel": "阅读教程",
+  "body": [
+    "一个面向新手和独立创作者的 Codex 教学网页。",
+    "内容包含如何开始和 Codex 对话、如何提供上下文、如何让它先检查再执行、如何审查结果，以及如何把 Codex 当作一人公司的产品、技术、内容、运营和数据工作搭档。"
+  ]
+}

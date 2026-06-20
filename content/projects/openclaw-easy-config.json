@@ -1,0 +1,16 @@
+{
+  "title": "OpenClaw 第三方 API 配置生成器",
+  "slug": "openclaw-easy-config",
+  "date": "2026-05-27",
+  "summary": "把 Base URL、API Key、提供商、模型 API 模式和 memorySearch 配置合并进 OpenClaw 配置文件的纯前端工具。",
+  "tags": ["OpenClaw", "API 配置", "小工具"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/openclaw-easy-config/",
+  "eyebrow": "Vibe Coding / 012",
+  "actionLabel": "打开配置生成器",
+  "body": [
+    "接入 openclaw-easy-config，用于快速生成 OpenClaw 第三方 API 配置。",
+    "支持多个模型、按模型设置 API 模式、能力声明、JSON5 输入和一键复制生成结果。"
+  ]
+}
