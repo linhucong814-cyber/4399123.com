@@ -3,7 +3,7 @@
     <div class="section-head blog-page-head">
       <div>
         <p class="eyebrow">Journal</p>
-        <h2>博客</h2>
+        <component :is="selectedPost ? 'h2' : 'h1'">博客</component>
       </div>
       <a class="secondary-link compact-action" href="/">返回首页</a>
     </div>
@@ -46,8 +46,9 @@
 
     <div v-else class="blog-grid">
       <a
-        v-for="post in posts"
+        v-for="(post, index) in posts"
         :key="post.id"
+        v-reveal="index"
         class="blog-card"
         :href="postHref(post)"
       >
@@ -115,7 +116,9 @@
 <script setup>
 import { computed, onMounted, ref, watch, watchEffect } from "vue";
 import { localBlogPosts } from "../data/content";
-import { getCurrentUser, loginUser, logoutUser } from "../services/auth";
+import { loginUser, logoutUser } from "../services/auth";
+import { refreshAuth, setAuthUser } from "../services/authState";
+import { createBlogComment, getBlogComments, getBlogPosts } from "../services/blog";
 import { setPageSeo } from "../utils/seo";
 
 const props = defineProps({
@@ -251,13 +254,7 @@ async function loadPosts() {
   isLoading.value = true;
 
   try {
-    const response = await fetch("/api/blog/posts", {
-      credentials: "same-origin",
-    });
-    if (!response.ok) {
-      throw new Error("posts_request_failed");
-    }
-    const data = await response.json();
+    const data = await getBlogPosts();
     const remotePosts = Array.isArray(data.posts) ? data.posts : [];
     posts.value = mergePosts(remotePosts, localBlogPosts);
   } catch {
@@ -269,8 +266,8 @@ async function loadPosts() {
 
 async function loadCommentUser() {
   try {
-    const data = await getCurrentUser();
-    commentUser.value = data.user ? { id: data.user.id, username: data.user.username } : null;
+    const authUser = await refreshAuth();
+    commentUser.value = authUser ? { id: authUser.id, username: authUser.username } : null;
   } catch {
     commentUser.value = null;
   }
@@ -280,13 +277,7 @@ async function loadComments() {
   if (!showComments.value) return;
 
   try {
-    const response = await fetch(`/api/blog/comments?post=${encodeURIComponent(activeCommentPost.value)}`, {
-      credentials: "same-origin",
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "评论加载失败。");
-    }
+    const data = await getBlogComments(activeCommentPost.value);
     comments.value = Array.isArray(data.comments) ? data.comments : [];
     commentsEnabled.value = data.settings?.commentsEnabled !== false;
     if (data.user) {
@@ -307,6 +298,7 @@ async function loginForComment() {
       password: loginPassword.value,
     });
     commentUser.value = data.user ? { id: data.user.id, username: data.user.username } : null;
+    setAuthUser(data.user || null);
     loginPassword.value = "";
     commentStatus.value = "已登录，可以评论。";
     await loadComments();
@@ -319,6 +311,7 @@ async function loginForComment() {
 
 async function logoutCommentUser() {
   await logoutUser();
+  setAuthUser(null);
   commentUser.value = null;
   commentBody.value = "";
   commentStatus.value = "已退出登录。";
@@ -335,16 +328,7 @@ async function submitComment() {
   commentStatus.value = "";
 
   try {
-    const response = await fetch("/api/blog/comments", {
-      method: "POST",
-      credentials: "same-origin",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ post: activeCommentPost.value, body }),
-    });
-    const data = await response.json();
-    if (!response.ok) {
-      throw new Error(data.error || "评论发布失败。");
-    }
+    await createBlogComment(activeCommentPost.value, body);
     commentBody.value = "";
     commentStatus.value = "评论已发布。";
     await loadComments();

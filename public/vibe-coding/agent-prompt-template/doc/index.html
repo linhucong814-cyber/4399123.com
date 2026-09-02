@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 提示词模板生成器更新说明</title>
+  <meta name="description" content="Agent 提示词模板生成器本次更新说明：公众号模板、HyperFrames 视频 VoxCPM 配音、回复他人评论、自定义 AI API 配置。">
+  <link rel="canonical" href="https://4399123.com/vibe-coding/agent-prompt-template/doc/">
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --ink: #181c22;
+      --muted: #5e6571;
+      --line: #d9dee7;
+      --soft-line: #edf0f4;
+      --accent: #0f766e;
+      --blue: #2563eb;
+      --violet: #7c3aed;
+      --amber: #b45309;
+      --rose: #be123c;
+      --green: #147a45;
+      --shadow: 0 18px 42px rgba(24, 28, 34, 0.09);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    a { color: inherit; }
+
+    .page {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 42px;
+    }
+
+    .quick-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .quick-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 22px rgba(24, 28, 34, 0.06);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.9fr);
+      gap: 18px;
+      align-items: stretch;
+      margin-bottom: 18px;
+    }
+
+    .hero-copy,
+    .hero-visual,
+    .panel,
+    .module-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      padding: 24px;
+    }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 0;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(30px, 5vw, 52px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .lead {
+      margin: 16px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.8;
+    }
+
+    .hero-visual {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 300px;
+      padding: 20px;
+      overflow: hidden;
+      background:
+        linear-gradient(135deg, rgba(15, 118, 110, 0.12), transparent 46%),
+        linear-gradient(315deg, rgba(37, 99, 235, 0.1), transparent 44%),
+        #fff;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-row img {
+      width: 54px;
+      height: 54px;
+      object-fit: contain;
+      border-radius: var(--radius);
+      background: #f7f8fa;
+    }
+
+    .brand-row strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .brand-row span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flow {
+      display: grid;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .flow-item {
+      display: grid;
+      grid-template-columns: 30px minmax(0, 1fr);
+      gap: 10px;
+      align-items: center;
+      min-height: 44px;
+      padding: 8px;
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, 0.74);
+    }
+
+    .flow-index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      background: var(--ink);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .flow-item span:last-child {
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .panel {
+      padding: 20px;
+      margin-bottom: 18px;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .overview-grid,
+    .module-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 122px;
+      padding: 14px;
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      background: #fbfcfd;
+    }
+
+    .metric b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 15px;
+    }
+
+    .metric p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+    }
+
+    .module-card {
+      padding: 18px;
+    }
+
+    .module-card h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .module-card p,
+    .module-card li {
+      color: var(--muted);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .module-card p { margin: 0 0 12px; }
+    .module-card ul { margin: 0; padding-left: 18px; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .tag.green { background: var(--green); }
+    .tag.blue { background: var(--blue); }
+    .tag.rose { background: var(--rose); }
+    .tag.violet { background: var(--violet); }
+
+    .value-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .value-list li {
+      padding: 14px;
+      border: 1px solid var(--soft-line);
+      border-radius: var(--radius);
+      background: #fbfcfd;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .value-list strong {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--ink);
+    }
+
+    .prompt-box {
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fbfcfd;
+      color: var(--ink);
+      font: 14px/1.75 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+      white-space: pre-wrap;
+    }
+
+    .copy-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .button {
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--accent);
+      border-radius: var(--radius);
+      background: var(--accent);
+      color: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 800;
+    }
+
+    .copy-status {
+      color: var(--green);
+      font-size: 14px;
+    }
+
+    @media (max-width: 920px) {
+      .hero,
+      .overview-grid,
+      .module-grid,
+      .value-list {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        min-height: auto;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        width: min(100% - 24px, 680px);
+        padding: 20px 0 32px;
+      }
+
+      .section-head {
+        align-items: start;
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <nav class="quick-links" aria-label="页面入口">
+      <a class="quick-link" href="/">4399123.com</a>
+      <a class="quick-link" href="/vibe-coding/agent-prompt-template/">返回生成器</a>
+      <a class="quick-link" href="/vibe-coding/">Vibe Coding</a>
+    </nav>
+
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">Agent Prompt Template Generator Doc</p>
+        <h1>Agent 提示词模板生成器更新说明</h1>
+        <p class="lead">最新版本把核心流程收敛为“选择模板、输入需求、复制结果”，并继续保留模板扩展、AI 优化和自定义接口能力。</p>
+      </div>
+
+      <aside class="hero-visual" aria-label="更新工作流图">
+        <div class="brand-row">
+          <img src="/assets/brand/4399123-domain-logo-transparent.png" alt="4399123 标识">
+          <div>
+            <strong>4399123 Vibe Coding</strong>
+            <span>模板、视频、评论、接口配置</span>
+          </div>
+        </div>
+        <div class="flow">
+          <div class="flow-item"><span class="flow-index">1</span><span>采集网页、主题、帖子或视频想法</span></div>
+          <div class="flow-item"><span class="flow-index">2</span><span>选择公众号、视频、评论、图片等模板</span></div>
+          <div class="flow-item"><span class="flow-index">3</span><span>通过自定义 AI API 配置生成结果</span></div>
+          <div class="flow-item"><span class="flow-index">4</span><span>交付 Markdown、视频任务、评论候选或提示词</span></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>2026-07-11 · 简约体验更新</h2>
+        <p>默认简单，高级能力按需展开</p>
+      </div>
+      <ul class="value-list">
+        <li><strong>主路径更短</strong>模板、输入和结果形成清晰顺序，普通用户无需配置 API 即可开始。</li>
+        <li><strong>界面更克制</strong>AI 设置和图片细节默认收起，移动端模板支持横向浏览，减少首屏负担。</li>
+        <li><strong>操作更可靠</strong>草稿在当前会话内自动恢复，生成支持取消和超时提示，弹窗焦点可以正确返回。</li>
+        <li><strong>隐私与安全加强</strong>API Key 只保存在页面内存；后端限制请求与响应体积、校验外部地址并禁止自动跟随重定向。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>更新概览</h2>
+        <p>四个模块覆盖常见内容生产链路</p>
+      </div>
+      <div class="overview-grid">
+        <article class="metric">
+          <b>公众号模板</b>
+          <p>收集网站内容与图片，生成公众号文章任务，最终交付 .md 文件。</p>
+        </article>
+        <article class="metric">
+          <b>HyperFrames + VoxCPM</b>
+          <p>制作抖音短视频、配音、克隆音频，并固定 4:3 视频画幅。</p>
+        </article>
+        <article class="metric">
+          <b>回复他人评论</b>
+          <p>直接生成多风格高互动评论，强调自然真实和流量爆点。</p>
+        </article>
+        <article class="metric">
+          <b>自定义 AI API</b>
+          <p>用户自行填写 Base URL、模型 ID、API 模式和 API Key。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="module-grid" aria-label="更新模块详情">
+      <article class="module-card">
+        <span class="tag green">公众号模板</span>
+        <h3>网页到公众号文章</h3>
+        <p>把网页内容、图片素材和写作目标整合为可执行的公众号文章生成任务。</p>
+        <ul>
+          <li>收集网站内容和图片素材。</li>
+          <li>支持 image 生成配图或搜索配图。</li>
+          <li>最终文章保存为 Markdown 文件。</li>
+        </ul>
+      </article>
+
+      <article class="module-card">
+        <span class="tag blue">短视频生产</span>
+        <h3>HyperFrames 视频 + VoxCPM 配音</h3>
+        <p>从导演视角处理叙事、节奏、镜头语言、情绪曲线和声音设计。</p>
+        <ul>
+          <li>输出 HyperFrames 可执行视频任务。</li>
+          <li>规划 VoxCPM 配音提示词。</li>
+          <li>支持克隆音频和 4:3 画幅要求。</li>
+        </ul>
+      </article>
+
+      <article class="module-card">
+        <span class="tag rose">评论生成</span>
+        <h3>回复他人评论</h3>
+        <p>从创建 skill 的模板重构为直接生成评论内容的模板，降低使用成本。</p>
+        <ul>
+          <li>输出最推荐评论和多条备选。</li>
+          <li>包含最容易火、自然共鸣、犀利锐评、幽默版、高级版。</li>
+          <li>强调真实、自然、像真人表达。</li>
+        </ul>
+      </article>
+
+      <article class="module-card">
+        <span class="tag violet">API 配置</span>
+        <h3>用户自定义 AI API</h3>
+        <p>页面新增 AI API 配置区，让用户自行接入不同模型服务。</p>
+        <ul>
+          <li>支持 Base URL、Provider、Model ID、API Mode、API Key。</li>
+          <li>支持 openai-completions、anthropic-messages、openai-responses、google-generative-ai。</li>
+          <li>API Key 只保存在当前页面内存，不写入浏览器存储、日志、响应或构建产物。</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>本次更新价值</h2>
+        <p>从模板数量扩展到工作流能力升级</p>
+      </div>
+      <ul class="value-list">
+        <li><strong>模板更完整</strong>覆盖公众号文章、短视频、评论回复等高频内容生产场景。</li>
+        <li><strong>工作流更清晰</strong>从输入素材、生成任务到最终 Markdown 或视频交付，路径更明确。</li>
+        <li><strong>生成结果更实用</strong>评论模板直接输出可用文案，减少中间配置成本。</li>
+        <li><strong>配置更灵活</strong>支持自定义 AI API，方便用户接入自己的模型服务。</li>
+      </ul>
+    </section>
+
+    <section class="panel">
+      <div class="section-head">
+        <h2>给 Agent 的任务提示词</h2>
+        <p>可复制后继续交给 agent 执行</p>
+      </div>
+      <textarea class="prompt-box" id="agentPrompt" readonly>请帮我在当前项目中添加一个 Agent 提示词模板生成器 doc 网页，用来介绍本次更新内容。
+
+背景资料：
+本次更新聚焦模板扩展、短视频生产、评论生成、自定义 AI API 配置四个方向。更新内容包括：
+1. 新增公众号模板：收集网站内容与图片，生成公众号文章任务，支持 image 生成配图或搜索配图，最终保存为 .md。
+2. 新增 HyperFrames 视频 + VoxCPM 配音模板：用 HyperFrames 制作抖音短视频，用 VoxCPM 配音，支持克隆音频，要求 4:3 画幅，并从导演视角处理叙事、节奏、镜头语言、情绪曲线和声音设计。
+3. 新增回复他人评论模板：从创建 viral-comment-reply skill 的模板重构为直接生成评论内容，输出最推荐、最容易火、自然共鸣、犀利锐评、幽默版、高级版等评论候选，要求自然真实、有流量爆点、像真人表达。
+4. 新增用户自定义 AI API 配置：页面支持用户填写 Base URL、提供商、模型 ID、API 模式和 API Key，支持 openai-completions、anthropic-messages、openai-responses、google-generative-ai，API Key 不写日志、不进响应、不进构建产物。
+
+请完成：
+1. 先检查当前项目的前端静态页面结构、构建方式和路由规则，确认 doc 页面应该放在哪里。
+2. 新增一个独立 doc 网页，路径建议为 /vibe-coding/agent-prompt-template/doc/。
+3. doc 页面要清晰介绍本次更新概览、四个更新模块、适用场景、工作流价值和安全说明。
+4. 从 Agent 提示词模板生成器主页面增加入口链接到 doc 页面。
+5. 页面要适配桌面端和移动端，文字不能溢出，视觉风格要和现有生成器一致。
+6. 构建前端并验证线上页面可访问。
+7. 如果项目有 sitemap 或静态路由生成逻辑，请把 doc 页面加入可发现路径。
+
+交付物：
+- 修改文件清单。
+- doc 页面访问地址。
+- 构建与验证结果。
+- 如果发现当前架构不适合直接添加 doc 页面，请先说明原因并给出修复方案。
+
+检查完成之后制定修复方案并向我汇报，在批准后执行</textarea>
+      <div class="copy-row">
+        <button class="button" id="copyPromptButton" type="button">复制提示词</button>
+        <span class="copy-status" id="copyStatus" aria-live="polite"></span>
+      </div>
+    </section>
+  </main>
+
+  <script src="doc.js"></script>
+</body>
+</html>

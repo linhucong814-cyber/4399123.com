@@ -42,7 +42,7 @@ export const localVibeCodingProjects = projectItems.map((item, index) => ({
   title: item.title,
   description: item.summary,
   href: item.href || `/blog/${encodeURIComponent(item.slug)}`,
-  image: item.cover || "/assets/brand/4399123-domain-logo-transparent.png",
+  image: item.cover || "/assets/brand/project-cover-placeholder.svg",
   imageAlt: item.title,
   actionLabel: item.actionLabel || "打开记录",
   date: item.date,

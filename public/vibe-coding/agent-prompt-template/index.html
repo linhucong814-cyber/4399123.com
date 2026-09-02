@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent 提示词模板生成器</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f6f8;
+      --panel: #ffffff;
+      --ink: #181c22;
+      --muted: #5e6571;
+      --line: #d9dee7;
+      --soft-line: #edf0f4;
+      --accent: #0f766e;
+      --accent-hover: #0b625b;
+      --danger: #c2410c;
+      --danger-soft: #fff3ed;
+      --success: #147a45;
+      --shadow: 0 18px 42px rgba(24, 28, 34, 0.09);
+      --radius: 8px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    a,
+    button,
+    textarea {
+      font: inherit;
+    }
+
+    .app {
+      width: min(980px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 32px 0;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .quick-links {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .domain-shortcut {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 38px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--accent);
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      box-shadow: 0 8px 22px rgba(24, 28, 34, 0.06);
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .domain-shortcut:hover {
+      border-color: rgba(15, 118, 110, 0.38);
+      background: #eefaf7;
+      color: var(--accent-hover);
+    }
+
+    .domain-shortcut:active {
+      transform: translateY(1px);
+    }
+
+    .skill-shortcut {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .skill-shortcut:hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+      color: #fff;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(26px, 4vw, 42px);
+      line-height: 1.12;
+      letter-spacing: 0;
+    }
+
+    .badge {
+      flex: 0 0 auto;
+      padding: 7px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .template-picker {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .template-option {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      cursor: pointer;
+      font-weight: 700;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .template-option:hover {
+      border-color: rgba(15, 118, 110, 0.38);
+      background: #eefaf7;
+      color: var(--accent-hover);
+    }
+
+    .template-option:active {
+      transform: translateY(1px);
+    }
+
+    .template-option.is-active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .panel {
+      min-width: 0;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      min-height: 54px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--soft-line);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 0;
+    }
+
+    .counter {
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .field {
+      display: block;
+      width: 100%;
+      min-height: 320px;
+      border: 0;
+      resize: vertical;
+      outline: none;
+      padding: 18px;
+      color: var(--ink);
+      background: transparent;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .field::placeholder {
+      color: #8b93a1;
+    }
+
+    .field:focus {
+      box-shadow: inset 0 0 0 2px rgba(15, 118, 110, 0.22);
+    }
+
+    .result {
+      display: block;
+      width: 100%;
+      min-height: 320px;
+      padding: 18px;
+      background: #fbfcfd;
+      line-height: 1.75;
+      font-size: 16px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      border: 0;
+      outline: none;
+      color: var(--ink);
+      resize: vertical;
+    }
+
+    .result.placeholder {
+      color: #8b93a1;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: flex-end;
+      padding: 14px 16px;
+      border-top: 1px solid var(--soft-line);
+      background: #fff;
+    }
+
+    .status {
+      margin-right: auto;
+      min-height: 20px;
+      color: var(--success);
+      font-size: 14px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 40px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    }
+
+    .button:hover {
+      border-color: #b9c1ce;
+      background: #f7f8fa;
+    }
+
+    .button:active {
+      transform: translateY(1px);
+    }
+
+    .button.primary {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .button.primary:hover {
+      border-color: var(--accent-hover);
+      background: var(--accent-hover);
+    }
+
+    .button.ai {
+      border-color: #2563eb;
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .button.ai:hover {
+      border-color: #1d4ed8;
+      background: #1d4ed8;
+    }
+
+    .button.danger {
+      color: var(--danger);
+      background: var(--danger-soft);
+      border-color: #fed7c3;
+    }
+
+    .button.danger:hover {
+      background: #ffe6da;
+      border-color: #fdba9f;
+    }
+
+    .button:disabled {
+      opacity: 0.48;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .icon {
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+    }
+
+    .template-note {
+      margin-top: 18px;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .prompt-dialog {
+      width: min(760px, calc(100% - 32px));
+      max-height: min(820px, calc(100vh - 32px));
+      padding: 0;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      box-shadow: 0 24px 70px rgba(24, 28, 34, 0.22);
+    }
+
+    .prompt-dialog::backdrop {
+      background: rgba(24, 28, 34, 0.38);
+    }
+
+    .dialog-shell {
+      display: flex;
+      flex-direction: column;
+      min-height: min(680px, calc(100vh - 64px));
+    }
+
+    .dialog-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding: 16px;
+      border-bottom: 1px solid var(--soft-line);
+    }
+
+    .dialog-head h2 {
+      margin: 0;
+      font-size: 18px;
+      letter-spacing: 0;
+    }
+
+    .dialog-result {
+      flex: 1;
+      width: 100%;
+      min-height: 360px;
+      padding: 18px;
+      border: 0;
+      outline: none;
+      resize: vertical;
+      background: #fbfcfd;
+      color: var(--ink);
+      line-height: 1.75;
+      font-size: 16px;
+      white-space: pre-wrap;
+    }
+
+    .dialog-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+      border-top: 1px solid var(--soft-line);
+      background: #fff;
+    }
+
+    @media (max-width: 780px) {
+      .app {
+        width: min(100% - 24px, 680px);
+        padding: 20px 0;
+      }
+
+      .topbar {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .workspace {
+        grid-template-columns: 1fr;
+      }
+
+      .field,
+      .result {
+        min-height: 240px;
+      }
+
+      .actions {
+        flex-wrap: wrap;
+        justify-content: stretch;
+      }
+
+      .status {
+        flex-basis: 100%;
+      }
+
+      .button {
+        flex: 1 1 140px;
+      }
+
+      .dialog-actions {
+        flex-wrap: wrap;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <nav class="quick-links" aria-label="页面快捷入口">
+      <a class="domain-shortcut" href="https://4399123.com/">4399123.com</a>
+      <a
+        class="domain-shortcut skill-shortcut"
+        href="https://github.com/linhucong814-cyber/goal-prompt-template-skill"
+        target="_blank"
+        rel="noopener noreferrer"
+      >GitHub 开源 /goal Skill ↗</a>
+    </nav>
+
+    <header class="topbar">
+      <h1>Agent 提示词模板生成器</h1>
+      <div class="badge">实时生成</div>
+    </header>
+
+    <section class="template-picker" aria-label="选择提示词模板">
+      <button class="template-option is-active" type="button" data-template="default" aria-pressed="true">通用任务</button>
+      <button class="template-option" type="button" data-template="goal" aria-pressed="false">帮我写 /goal</button>
+    </section>
+
+    <section class="workspace" aria-label="提示词生成工作区">
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">输入内容</h2>
+          <span class="counter" id="inputCounter">0 字</span>
+        </div>
+        <textarea
+          id="topicInput"
+          class="field"
+          placeholder="例如：帮我检查一个网站的 UI 问题"
+          aria-label="你想让 agent 做什么"
+          autofocus
+        ></textarea>
+        <div class="actions">
+          <button class="button danger" id="clearButton" type="button" disabled>
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 6h18"></path>
+              <path d="M8 6V4h8v2"></path>
+              <path d="M19 6l-1 14H6L5 6"></path>
+              <path d="M10 11v5"></path>
+              <path d="M14 11v5"></path>
+            </svg>
+            清空
+          </button>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head">
+          <h2 class="panel-title">生成结果</h2>
+          <span class="counter" id="outputCounter">0 字</span>
+        </div>
+        <textarea id="promptOutput" class="result placeholder" aria-label="生成结果" readonly>输入内容后，这里会生成完整提示词。</textarea>
+        <div class="actions">
+          <span class="status" id="copyStatus" role="status" aria-live="polite"></span>
+          <button class="button ai" id="expandButton" type="button" disabled>
+            AI 生成下一步
+          </button>
+          <button class="button primary" id="copyButton" type="button" disabled>
+            <svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            复制提示词
+          </button>
+        </div>
+      </article>
+    </section>
+
+    <div class="template-note">
+      固定结尾：检查完成之后制定修复方案并向我汇报，在批准后执行
+    </div>
+  </main>
+
+  <dialog class="prompt-dialog" id="aiDialog">
+    <div class="dialog-shell">
+      <div class="dialog-head">
+        <h2>下一步完整提示词</h2>
+        <button class="button" id="closeDialogButton" type="button">关闭</button>
+      </div>
+      <textarea id="aiPromptOutput" class="dialog-result" aria-label="AI 生成的下一步完整提示词" readonly></textarea>
+      <div class="dialog-actions">
+        <span class="status" id="aiStatus" role="status" aria-live="polite"></span>
+        <button class="button primary" id="copyAiButton" type="button" disabled>复制完整提示词</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,8 +1,46 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import "./styles.css";
+import "./runway.css";
+import "./minimal-home.css";
 
-createApp(App).mount("#app");
+const app = createApp(App);
+
+app.directive("reveal", {
+  mounted(el, binding) {
+    el.classList.add("motion-reveal");
+
+    const index = Number(binding.value);
+    if (Number.isFinite(index)) {
+      el.style.setProperty("--reveal-index", String(Math.min(index, 8)));
+    }
+
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || !("IntersectionObserver" in window)) {
+      el.classList.add("is-visible");
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        el.classList.add("is-visible");
+        observer.disconnect();
+      },
+      {
+        rootMargin: "0px 0px -8% 0px",
+        threshold: 0.12,
+      },
+    );
+
+    observer.observe(el);
+    el.__motionRevealObserver = observer;
+  },
+  unmounted(el) {
+    el.__motionRevealObserver?.disconnect();
+  },
+});
+
+app.mount("#app");
 
 if ("serviceWorker" in navigator) {
   let refreshingForServiceWorker = false;

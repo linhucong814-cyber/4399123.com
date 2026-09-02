@@ -12,6 +12,7 @@ This repository is the public first version of 4399123.com.
 - Search entrance
 - Public content files
 - Public assets needed by the site
+- 首页背景风格选择器及其 6 套公开背景资源
 - Open-source community docs
 
 ## Excluded

@@ -32,6 +32,9 @@ const AXIS = { x: 0, y: 1, z: 2 };
 const SNAP_STEP = 0.25;
 const SNAP_THRESHOLD = 0.055;
 const STORAGE_KEY = "print-garden-gallery-v2";
+const DRAFT_STORAGE_KEY = "print-garden-draft-v1";
+const MAX_HISTORY = 40;
+const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 const NAME_PREFIXES = ["晨雾", "珊瑚", "薄荷", "星轨", "橘光", "陶白", "蓝湾", "麦穗", "松石", "晴窗"];
 const NAME_NOUNS = ["花园", "火箭", "花瓶", "伙伴", "塔台", "灯笼", "容器", "小岛", "种子", "回声"];
 const RARITIES = [
@@ -42,9 +45,10 @@ const RARITIES = [
   { key: "legendary", label: "传说", min: 132 },
 ];
 const savedGallery = loadGallery();
+const savedDraft = loadDraft();
 
 const state = {
-  draft: {
+  draft: savedDraft || {
     shape: "planter",
     color: "#ff755f",
     baseColor: "#ff755f",
@@ -84,8 +88,12 @@ const state = {
   coins: 0,
   level: 1,
   speed: 1,
-  autoSpin: true,
+  autoSpin: !prefersReducedMotion.matches,
 };
+
+const undoStack = [];
+const redoStack = [];
+let toastTimer = null;
 
 const ui = {
   shapeControls: document.querySelector("#shapeControls"),
@@ -97,6 +105,8 @@ const ui = {
   customEditor: document.querySelector("#customEditor"),
   primitiveControls: document.querySelector("#primitiveControls"),
   quickControls: document.querySelector("#quickControls"),
+  undoBtn: document.querySelector("#undoBtn"),
+  redoBtn: document.querySelector("#redoBtn"),
   toolControls: document.querySelector("#toolControls"),
   deletePartBtn: document.querySelector("#deletePartBtn"),
   editorHint: document.querySelector("#editorHint"),
@@ -122,6 +132,10 @@ const ui = {
   printStatus: document.querySelector("#printStatus"),
   progressLabel: document.querySelector("#progressLabel"),
   progressBar: document.querySelector("#progressBar"),
+  progressTrack: document.querySelector("#progressTrack"),
+  completionCard: document.querySelector("#completionCard"),
+  completionName: document.querySelector("#completionName"),
+  completionReward: document.querySelector("#completionReward"),
   shelfList: document.querySelector("#shelfList"),
   collectionWall: document.querySelector("#collectionWall"),
   favoriteLabel: document.querySelector("#favoriteLabel"),
@@ -131,6 +145,8 @@ const ui = {
   emptyGallery: document.querySelector("#emptyGallery"),
   speedBtn: document.querySelector("#speedBtn"),
   spinBtn: document.querySelector("#spinBtn"),
+  journeyLinks: document.querySelectorAll("[data-stage-link]"),
+  toast: document.querySelector("#toast"),
 };
 
 const scenes = {
@@ -170,6 +186,7 @@ transformControls.setSize(0.78);
 transformControls.addEventListener("dragging-changed", (event) => {
   scenes.workbench.controls.enabled = !event.value;
 });
+transformControls.addEventListener("mouseDown", rememberDraft);
 transformControls.addEventListener("objectChange", syncSelectedComponent);
 transformControls.addEventListener("mouseUp", () => {
   snapSelectedComponent();
@@ -187,7 +204,11 @@ function createViewer(canvas, options) {
     antialias: true,
     alpha: false,
   });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const maxPixelRatio = window.innerWidth <= 640 ? 1.35 : 1.75;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, maxPixelRatio));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.08;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -195,16 +216,16 @@ function createViewer(canvas, options) {
   camera.position.set(...options.camera);
   camera.lookAt(...(options.target || [0, 0.75, 0]));
 
-  const hemi = new THREE.HemisphereLight(0xffffff, 0x9c9587, 2.2);
+  const hemi = new THREE.HemisphereLight(0xfff8e8, 0x8c9aa1, 2.35);
   scene.add(hemi);
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.8);
+  const key = new THREE.DirectionalLight(0xfff5e2, 3.15);
   key.position.set(4, 7, 4);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0x7fcfc1, 0.8);
+  const fill = new THREE.DirectionalLight(0x72d8c7, 1.05);
   fill.position.set(-4, 3, 3);
   scene.add(fill);
 
@@ -218,14 +239,14 @@ function createViewer(canvas, options) {
     controls.enablePan = false;
   }
 
-  return { scene, renderer, camera, controls, canvas };
+  return { scene, renderer, camera, controls, canvas, isVisible: true, needsRender: true };
 }
 
 function createMaterial(color, roughness = 0.55) {
   return new THREE.MeshStandardMaterial({
     color,
-    roughness,
-    metalness: 0.04,
+    roughness: Math.max(0.32, roughness),
+    metalness: 0.02,
   });
 }
 
@@ -511,15 +532,26 @@ function buildRocket(group, mat, alt, dark, detail) {
   }
 }
 
-function createPrintLayers(spec, progress) {
+function createPrintModel(spec) {
   const model = createModel(spec);
-  const revealHeight = THREE.MathUtils.lerp(0.04, 2.35, progress);
   model.traverse((child) => {
     if (child.isMesh) {
-      child.scale.y *= Math.min(1, Math.max(0.05, revealHeight / Math.max(child.position.y + 0.3, 0.4)));
+      child.userData.printBaseScaleY = child.scale.y;
     }
   });
+  updatePrintReveal(model, 0);
   return model;
+}
+
+function updatePrintReveal(model, progress) {
+  if (!model) return;
+  const revealHeight = THREE.MathUtils.lerp(0.04, 2.35, progress);
+  model.traverse((child) => {
+    if (!child.isMesh) return;
+    const baseScaleY = child.userData.printBaseScaleY ?? child.scale.y;
+    const reveal = Math.min(1, Math.max(0.035, revealHeight / Math.max(child.position.y + 0.3, 0.4)));
+    child.scale.y = baseScaleY * reveal;
+  });
 }
 
 function lighten(color, amount) {
@@ -535,9 +567,27 @@ function shiftTone(color, amount) {
   return `#${c.getHexString()}`;
 }
 
+function disposeObject3D(object) {
+  if (!object) return;
+  object.traverse((child) => {
+    child.geometry?.dispose?.();
+    const materials = Array.isArray(child.material) ? child.material : [child.material];
+    materials.filter(Boolean).forEach((material) => {
+      Object.values(material).forEach((value) => {
+        if (value?.isTexture) value.dispose();
+      });
+      material.dispose?.();
+    });
+  });
+}
+
 function replaceModel(viewer, current, next) {
-  if (current) viewer.scene.remove(current);
+  if (current) {
+    viewer.scene.remove(current);
+    disposeObject3D(current);
+  }
   viewer.scene.add(next);
+  viewer.needsRender = true;
   return next;
 }
 
@@ -550,6 +600,8 @@ function updateWorkbenchModel() {
   reselectComponent();
   updateEditorVisibility();
   updateEstimate();
+  updateStartAvailability();
+  saveDraft();
 }
 
 function updateEstimate() {
@@ -593,6 +645,7 @@ function makeRandomName() {
 function prepareNextName() {
   ui.nameInput.value = makeRandomName();
   updateEstimate();
+  saveDraft();
 }
 
 function getRarity(spec) {
@@ -604,6 +657,136 @@ function getRarity(spec) {
   const score = Math.round((spec.detail || 1) * 7 + ((spec.size || 1) - 0.8) * 30 + shapeBonus + customScore);
   const index = RARITIES.reduce((best, rarity, rarityIndex) => (score >= rarity.min ? rarityIndex : best), 0);
   return { ...RARITIES[index], score, rank: index };
+}
+
+function normalizeVector(value, fallback, min = -4, max = 4) {
+  if (!Array.isArray(value) || value.length < fallback.length) return [...fallback];
+  return fallback.map((defaultValue, index) => {
+    const number = Number(value[index]);
+    return Number.isFinite(number) ? Math.min(max, Math.max(min, number)) : defaultValue;
+  });
+}
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    if (!raw) return null;
+    const item = JSON.parse(raw);
+    if (!item || !Object.hasOwn(SHAPE_NAMES, item.shape)) return null;
+    const color = /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : "#ff755f";
+    const components = Array.isArray(item.components)
+      ? item.components.slice(0, 120).flatMap((component) => {
+        if (!component || !Object.hasOwn(PRIMITIVE_NAMES, component.type)) return [];
+        return [{
+          id: typeof component.id === "string" ? component.id : crypto.randomUUID(),
+          type: component.type,
+          color: /^#[0-9a-f]{6}$/i.test(component.color) ? component.color : color,
+          position: normalizeVector(component.position, [0, 0.4, 0], -3, 3),
+          rotation: normalizeVector(component.rotation, [0, 0, 0], -Math.PI * 4, Math.PI * 4),
+          scale: normalizeVector(component.scale, [1, 1, 1], 0.03, 4),
+          points: Array.isArray(component.points)
+            ? component.points.slice(0, 300).map((point) => normalizeVector(point, [0, 0.08, 0], -3, 3))
+            : undefined,
+          radius: Number.isFinite(Number(component.radius))
+            ? Math.min(0.2, Math.max(0.02, Number(component.radius)))
+            : undefined,
+        }];
+      })
+      : [];
+    return {
+      shape: item.shape,
+      color,
+      baseColor: /^#[0-9a-f]{6}$/i.test(item.baseColor) ? item.baseColor : color,
+      size: Math.min(1.3, Math.max(0.8, Number(item.size) || 1)),
+      detail: Math.min(5, Math.max(1, Math.round(Number(item.detail) || 3))),
+      components,
+      name: sanitizeName(item.name),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function snapshotDraft() {
+  return {
+    ...state.draft,
+    components: cloneComponents(state.draft.components),
+    name: sanitizeName(ui.nameInput?.value),
+  };
+}
+
+function saveDraft() {
+  try {
+    localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(snapshotDraft()));
+  } catch {
+    // Storage can be unavailable or full; the current session remains usable.
+  }
+}
+
+function snapshotsMatch(a, b) {
+  return JSON.stringify(a) === JSON.stringify(b);
+}
+
+function rememberDraft() {
+  const current = snapshotDraft();
+  const latest = undoStack.at(-1);
+  if (!latest || !snapshotsMatch(latest, current)) {
+    undoStack.push(current);
+    if (undoStack.length > MAX_HISTORY) undoStack.shift();
+  }
+  redoStack.length = 0;
+  updateHistoryButtons();
+}
+
+function applyDraftSnapshot(snapshot) {
+  state.draft = {
+    ...snapshot,
+    components: cloneComponents(snapshot.components),
+  };
+  state.selectedComponentId = state.draft.shape === "custom" ? state.draft.components[0]?.id || null : null;
+  ui.nameInput.value = sanitizeName(snapshot.name) || makeRandomName();
+  ui.toneRange.value = "0";
+  syncDraftControls();
+  updateWorkbenchModel();
+}
+
+function undoDraft() {
+  if (!undoStack.length) return;
+  redoStack.push(snapshotDraft());
+  applyDraftSnapshot(undoStack.pop());
+  updateHistoryButtons();
+  showToast("已撤销上一步创作");
+}
+
+function redoDraft() {
+  if (!redoStack.length) return;
+  undoStack.push(snapshotDraft());
+  applyDraftSnapshot(redoStack.pop());
+  updateHistoryButtons();
+  showToast("已恢复刚才的创作");
+}
+
+function updateHistoryButtons() {
+  ui.undoBtn.disabled = undoStack.length === 0;
+  ui.redoBtn.disabled = redoStack.length === 0;
+}
+
+function syncDraftControls() {
+  ui.shapeControls.querySelectorAll("[data-shape]").forEach((button) => {
+    const active = button.dataset.shape === state.draft.shape;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  ui.colorControls.querySelectorAll("[data-color]").forEach((button) => {
+    const active = button.dataset.color.toLowerCase() === state.draft.baseColor.toLowerCase();
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
+  ui.sizeRange.value = String(Math.round(state.draft.size * 100));
+  ui.sizeLabel.textContent = `${ui.sizeRange.value}%`;
+  ui.detailRange.value = String(state.draft.detail);
+  ui.detailLabel.textContent = ui.detailRange.value;
+  ui.customColorInput.value = state.draft.color;
 }
 
 function saveGallery() {
@@ -621,21 +804,104 @@ function loadGallery() {
     const items = JSON.parse(raw);
     if (!Array.isArray(items)) return [];
     return items
-      .filter((item) => item && item.id && item.shape)
-      .map((item) => ({
-        ...item,
-        name: sanitizeName(item.name) || `${SHAPE_NAMES[item.shape] || "作品"} #${Date.now().toString().slice(-4)}`,
-        rarity: item.rarity || getRarity(item),
-        favorite: Boolean(item.favorite),
-      }));
+      .slice(0, 100)
+      .filter((item) => item && typeof item.id === "string" && Object.hasOwn(SHAPE_NAMES, item.shape))
+      .map((item) => {
+        const safe = {
+          ...item,
+          color: /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : "#ff755f",
+          size: Math.min(1.3, Math.max(0.8, Number(item.size) || 1)),
+          detail: Math.min(5, Math.max(1, Math.round(Number(item.detail) || 3))),
+          components: Array.isArray(item.components)
+            ? item.components.filter((component) => component && Object.hasOwn(PRIMITIVE_NAMES, component.type)).slice(0, 120).map((component) => ({
+              ...component,
+              id: typeof component.id === "string" ? component.id : crypto.randomUUID(),
+              color: /^#[0-9a-f]{6}$/i.test(component.color) ? component.color : "#ff755f",
+              position: normalizeVector(component.position, [0, 0.4, 0], -3, 3),
+              rotation: normalizeVector(component.rotation, [0, 0, 0], -Math.PI * 4, Math.PI * 4),
+              scale: normalizeVector(component.scale, [1, 1, 1], 0.03, 4),
+              points: Array.isArray(component.points)
+                ? component.points.slice(0, 300).map((point) => normalizeVector(point, [0, 0.08, 0], -3, 3))
+                : undefined,
+            }))
+            : [],
+          name: sanitizeName(item.name) || `${SHAPE_NAMES[item.shape]} #${Date.now().toString().slice(-4)}`,
+          favorite: Boolean(item.favorite),
+        };
+        safe.rarity = getRarity(safe);
+        return safe;
+      });
   } catch {
     return [];
   }
 }
 
 function updateProgression() {
-  state.coins = state.gallery.reduce((total, item) => total + 8 + (item.detail || 1) * 3 + (item.rarity?.rank || 0) * 5, 0);
+  state.coins = state.gallery.reduce((total, item) => total + getItemReward(item), 0);
   state.level = 1 + Math.floor(state.gallery.length / 3);
+}
+
+function getItemReward(item) {
+  return 8 + (item.detail || 1) * 3 + (item.rarity?.rank || 0) * 5;
+}
+
+function setPrintProgress(progress) {
+  const percent = Math.round(Math.min(1, Math.max(0, progress)) * 100);
+  ui.progressLabel.textContent = `${percent}%`;
+  ui.progressBar.style.width = `${percent}%`;
+  ui.progressTrack.setAttribute("aria-valuenow", String(percent));
+}
+
+function setStartButton(label, hint) {
+  ui.startPrintBtn.replaceChildren();
+  const title = document.createElement("span");
+  title.textContent = label;
+  const subtitle = document.createElement("small");
+  subtitle.textContent = hint;
+  ui.startPrintBtn.append(title, subtitle);
+}
+
+function updateStartAvailability() {
+  const emptyCustom = state.draft.shape === "custom" && state.draft.components.length === 0;
+  if (state.print) {
+    ui.startPrintBtn.disabled = true;
+    setStartButton("打印进行中", "去打印区看看它长到哪了");
+    return;
+  }
+  if (state.finished) {
+    ui.startPrintBtn.disabled = true;
+    setStartButton("先收获完成作品", "收进展示台后即可继续创作");
+    return;
+  }
+  ui.startPrintBtn.disabled = emptyCustom;
+  setStartButton(emptyCustom ? "先添加一个零件" : "送去打印", emptyCustom ? "从方块、球体或自由画线开始" : "让灵感逐层变成玩具");
+}
+
+function setJourneyStage(stage) {
+  const order = ["studio", "production", "collection"];
+  const activeIndex = order.indexOf(stage);
+  ui.journeyLinks.forEach((link) => {
+    const index = order.indexOf(link.dataset.stageLink);
+    if (index === activeIndex) link.setAttribute("aria-current", "step");
+    else link.removeAttribute("aria-current");
+    link.classList.toggle("completed", index >= 0 && index < activeIndex);
+  });
+}
+
+function scrollToStage(selector) {
+  document.querySelector(selector)?.scrollIntoView({
+    behavior: prefersReducedMotion.matches ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
+function showToast(message, duration = 2800) {
+  window.clearTimeout(toastTimer);
+  ui.toast.textContent = message;
+  ui.toast.hidden = false;
+  toastTimer = window.setTimeout(() => {
+    ui.toast.hidden = true;
+  }, duration);
 }
 
 function escapeHtml(value) {
@@ -650,6 +916,15 @@ function escapeHtml(value) {
 
 function startPrint() {
   if (state.print) return;
+  if (state.finished) {
+    showToast("先把完成的作品收进展示台，再开始下一件吧");
+    scrollToStage("#production");
+    return;
+  }
+  if (state.draft.shape === "custom" && state.draft.components.length === 0) {
+    showToast("自由作品至少需要一个零件");
+    return;
+  }
   const spec = {
     id: crypto.randomUUID(),
     name: getDraftName(),
@@ -666,25 +941,44 @@ function startPrint() {
     duration: getPrintDuration(spec),
     elapsed: 0,
   };
-  state.finished = null;
-  ui.startPrintBtn.disabled = true;
-  ui.startPrintBtn.textContent = "打印中";
+  if (printModel) {
+    scenes.printer.scene.remove(printModel);
+    disposeObject3D(printModel);
+  }
+  printModel = createPrintModel(spec);
+  printModel.position.y = 0.06;
+  scenes.printer.scene.add(printModel);
+  state.speed = 1;
+  ui.speedBtn.disabled = false;
+  ui.speedBtn.textContent = "加速";
+  ui.speedBtn.setAttribute("aria-pressed", "false");
+  ui.completionCard.hidden = true;
+  updateStartAvailability();
   ui.harvestBtn.disabled = true;
   ui.harvestHint.textContent = "打印机正在工作";
   ui.printerTitle.textContent = `正在打印 ${spec.name}`;
+  ui.printStatus.textContent = `正在铺设第一层 · 剩余 ${formatTime(state.print.duration)}`;
+  setPrintProgress(0);
+  setJourneyStage("production");
+  showToast(`${spec.name} 已送入打印机`);
+  window.setTimeout(() => scrollToStage("#production"), 80);
 }
 
 function finishPrint() {
   state.finished = state.print.spec;
   state.print = null;
-  ui.startPrintBtn.disabled = false;
-  ui.startPrintBtn.textContent = "继续制作下一个";
   ui.harvestBtn.disabled = false;
+  ui.speedBtn.disabled = true;
   ui.harvestHint.textContent = `${state.finished.name} 已完成`;
   ui.printerTitle.textContent = "打印完成";
-  ui.printStatus.textContent = "可以收获了";
-  ui.progressLabel.textContent = "100%";
-  ui.progressBar.style.width = "100%";
+  ui.printStatus.textContent = "打印完成，可以收获了";
+  setPrintProgress(1);
+  ui.completionName.textContent = state.finished.name;
+  ui.completionReward.textContent = `${state.finished.rarity.label} · 收获 +${getItemReward(state.finished)} 灵感点`;
+  ui.completionCard.hidden = false;
+  updateStartAvailability();
+  showToast(`完成！${state.finished.name} 正在收获篮里等你`, 4200);
+  ui.harvestBtn.focus({ preventScroll: true });
 }
 
 function harvestPrint() {
@@ -697,27 +991,42 @@ function harvestPrint() {
   state.gallery.unshift(item);
   state.selectedId = item.id;
   state.finished = null;
+  if (printModel) {
+    scenes.printer.scene.remove(printModel);
+    disposeObject3D(printModel);
+    printModel = null;
+  }
+  scenes.printer.needsRender = true;
   updateProgression();
   ui.harvestBtn.disabled = true;
+  ui.speedBtn.disabled = true;
   ui.harvestHint.textContent = "已放入展示台";
   ui.printerTitle.textContent = "空闲中";
   ui.printStatus.textContent = "选择作品后开始打印";
-  ui.progressLabel.textContent = "0%";
-  ui.progressBar.style.width = "0%";
+  ui.completionCard.hidden = true;
+  setPrintProgress(0);
   renderShelf();
   renderCollectionWall();
   updateGalleryModel();
   updateCounters();
   saveGallery();
   prepareNextName();
+  updateStartAvailability();
+  setJourneyStage("collection");
+  showToast(`${item.name} 已加入展示台，获得 ${getItemReward(item)} 灵感点`);
+  window.setTimeout(() => scrollToStage("#gallery"), 80);
 }
 
 function updateGalleryModel() {
   const item = state.gallery.find((entry) => entry.id === state.selectedId);
   ui.emptyGallery.classList.toggle("hidden", Boolean(item));
   if (!item) {
-    if (galleryModel) scenes.gallery.scene.remove(galleryModel);
+    if (galleryModel) {
+      scenes.gallery.scene.remove(galleryModel);
+      disposeObject3D(galleryModel);
+    }
     galleryModel = null;
+    scenes.gallery.needsRender = true;
     return;
   }
   const model = createModel(item);
@@ -738,7 +1047,7 @@ function renderShelf() {
         <button class="shelf-select" type="button" data-select-id="${escapeHtml(item.id)}">
           <b>${escapeHtml(item.name)}</b>
         </button>
-        <button class="favorite-toggle${item.favorite ? " active" : ""}" type="button" data-favorite-id="${escapeHtml(item.id)}" aria-label="收藏 ${escapeHtml(item.name)}">收</button>
+        <button class="favorite-toggle${item.favorite ? " active" : ""}" type="button" data-favorite-id="${escapeHtml(item.id)}" aria-label="${item.favorite ? "取消收藏" : "收藏"} ${escapeHtml(item.name)}" aria-pressed="${item.favorite}">收</button>
       </div>
       <span>${escapeHtml(partText)} · ${Math.round(item.size * 100)}%</span>
       <span class="rarity-pill rarity-${rarity.key}">${rarity.label}</span>
@@ -780,14 +1089,18 @@ function toggleFavorite(id) {
   renderCollectionWall();
   updateCounters();
   saveGallery();
+  showToast(item.favorite ? `${item.name} 已挂到收藏墙` : `${item.name} 已移出收藏墙`);
 }
 
 function clearCollection() {
+  if (!state.gallery.some((item) => item.favorite)) return;
+  if (!window.confirm("确定取消全部收藏标记吗？作品仍会保留在展示台。")) return;
   state.gallery = state.gallery.map((item) => ({ ...item, favorite: false }));
   renderShelf();
   renderCollectionWall();
   updateCounters();
   saveGallery();
+  showToast("收藏墙已清空，展示台作品仍然保留");
 }
 
 function updateCounters() {
@@ -795,6 +1108,7 @@ function updateCounters() {
   ui.coinLabel.textContent = state.coins;
   ui.levelLabel.textContent = state.level;
   ui.favoriteLabel.textContent = state.gallery.filter((item) => item.favorite).length;
+  ui.clearCollectionBtn.disabled = !state.gallery.some((item) => item.favorite);
 }
 
 function updateEditorVisibility() {
@@ -819,6 +1133,7 @@ function getEditorHint() {
 }
 
 function addPrimitive(type) {
+  rememberDraft();
   const count = state.draft.components.length;
   const offset = ((count % 5) - 2) * 0.32;
   const component = {
@@ -837,6 +1152,7 @@ function addPrimitive(type) {
 function duplicateSelectedComponent() {
   const component = getSelectedComponent();
   if (!component) return;
+  rememberDraft();
   const next = cloneComponents([component])[0];
   next.id = crypto.randomUUID();
   next.position = [
@@ -852,6 +1168,7 @@ function duplicateSelectedComponent() {
 function mirrorSelectedComponent() {
   const component = getSelectedComponent();
   if (!component) return;
+  rememberDraft();
   const next = cloneComponents([component])[0];
   next.id = crypto.randomUUID();
   next.position = [-(next.position?.[0] || 0), next.position?.[1] || 0.42, next.position?.[2] || 0];
@@ -863,12 +1180,16 @@ function mirrorSelectedComponent() {
 
 function clearCustomCanvas() {
   if (state.draft.shape !== "custom") return;
+  if (!state.draft.components.length) return;
+  if (!window.confirm("确定清空自由创作画布吗？之后仍可使用“撤销”恢复。")) return;
+  rememberDraft();
   state.draft.components = [];
   state.selectedComponentId = null;
   updateWorkbenchModel();
 }
 
 function generateSurpriseCustom() {
+  rememberDraft();
   state.draft.shape = "custom";
   const palette = ["#ff755f", "#44c7b2", "#f7c44a", "#6c83ff", "#f4f0e8", "#20242a", "#b36bff"];
   const count = 5 + Math.floor(Math.random() * 5);
@@ -894,6 +1215,7 @@ function generateSurpriseCustom() {
 }
 
 function addSpongeBuddyPreset() {
+  rememberDraft();
   const baseId = crypto.randomUUID().slice(0, 8);
   const pieces = [
     part(`${baseId}-body`, "box", "#f7d94a", [0, 0.78, 0], [0, 0.08, 0], [1.05, 1.28, 0.42]),
@@ -940,7 +1262,9 @@ function part(id, type, color, position, rotation, scale) {
 function setEditorTool(tool) {
   state.editorTool = tool;
   ui.toolControls.querySelectorAll("[data-tool]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.tool === tool);
+    const active = button.dataset.tool === tool;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
   });
   scenes.workbench.controls.enabled = tool !== "draw";
   transformControls.enabled = tool !== "draw";
@@ -953,7 +1277,9 @@ function setTransformMode(mode) {
   state.transformMode = mode;
   transformControls.setMode(mode);
   ui.toolControls.querySelectorAll("[data-transform]").forEach((button) => {
-    button.classList.toggle("active", button.dataset.transform === mode);
+    const active = button.dataset.transform === mode;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
   });
   setEditorTool("select");
 }
@@ -970,6 +1296,8 @@ function syncSelectedComponent() {
   component.rotation = [selectedObject.rotation.x, selectedObject.rotation.y, selectedObject.rotation.z];
   component.scale = selectedObject.scale.toArray();
   updateInspector();
+  scenes.workbench.needsRender = true;
+  saveDraft();
 }
 
 function selectComponent(object) {
@@ -1001,11 +1329,13 @@ function findComponentObject(id) {
 
 function deleteSelectedComponent() {
   if (state.draft.shape !== "custom" || !state.selectedComponentId) return;
+  rememberDraft();
   state.draft.components = state.draft.components.filter((component) => component.id !== state.selectedComponentId);
   state.selectedComponentId = null;
   transformControls.detach();
   selectedObject = null;
   updateWorkbenchModel();
+  showToast("零件已删除，可随时撤销");
 }
 
 function getSelectedComponent() {
@@ -1152,6 +1482,7 @@ function paintDraftColor(color, options = {}) {
     const component = state.draft.components.find((item) => item.id === state.selectedComponentId);
     if (component) component.color = tonedColor;
     if (selectedObject?.material?.color) selectedObject.material.color.set(tonedColor);
+    saveDraft();
     return;
   }
   updateWorkbenchModel();
@@ -1203,6 +1534,7 @@ function beginDraw(event) {
   if (state.draft.shape !== "custom" || state.editorTool !== "draw") return;
   const point = getPointerOnPlane(event);
   if (!point) return;
+  rememberDraft();
   state.drawing.active = true;
   state.drawing.points = [point.toArray()];
   scenes.workbench.controls.enabled = false;
@@ -1274,6 +1606,7 @@ function paintSelected(color) {
   renderCollectionWall();
   updateCounters();
   saveGallery();
+  showToast(`${item.name} 已换上新颜色`);
 }
 
 function cloneComponents(components = []) {
@@ -1288,26 +1621,20 @@ function cloneComponents(components = []) {
 
 function updatePrintScene(delta) {
   const print = state.print;
-  if (!print) {
-    printerRig.gantry.position.x = Math.sin(performance.now() * 0.001) * 0.12;
-    return;
-  }
+  if (!print) return;
 
   print.elapsed += delta * state.speed;
   const progress = Math.min(1, print.elapsed / print.duration);
-  ui.printStatus.textContent = `剩余 ${formatTime(Math.max(0, print.duration - print.elapsed))}`;
-  ui.progressLabel.textContent = `${Math.round(progress * 100)}%`;
-  ui.progressBar.style.width = `${progress * 100}%`;
-
-  if (printModel) scenes.printer.scene.remove(printModel);
-  printModel = createPrintLayers(print.spec, progress);
-  printModel.position.y = 0.06;
-  scenes.printer.scene.add(printModel);
+  const phase = progress < 0.22 ? "正在打底" : progress < 0.72 ? "正在搭建立体轮廓" : "正在雕琢最后细节";
+  ui.printStatus.textContent = `${phase} · 剩余 ${formatTime(Math.max(0, print.duration - print.elapsed))}`;
+  setPrintProgress(progress);
+  updatePrintReveal(printModel, progress);
 
   const path = performance.now() * 0.0045 * state.speed;
   printerRig.gantry.position.x = Math.sin(path) * 1.4;
   printerRig.gantry.position.z = Math.cos(path * 0.73) * 0.82;
   printerRig.gantry.position.y = 2.05 - progress * 0.92;
+  scenes.printer.needsRender = true;
 
   if (progress >= 1) finishPrint();
 }
@@ -1321,32 +1648,59 @@ function resizeViewer(viewer) {
     viewer.renderer.setSize(width, height, false);
     viewer.camera.aspect = width / height;
     viewer.camera.updateProjectionMatrix();
+    viewer.needsRender = true;
   }
 }
 
 function animate() {
   const delta = clock.getDelta();
   Object.values(scenes).forEach((viewer) => {
+    if (!viewer.isVisible) return;
     resizeViewer(viewer);
-    if (viewer.controls) viewer.controls.update();
+    if (viewer.controls?.update()) viewer.needsRender = true;
   });
 
-  if (workbenchModel && state.draft.shape !== "custom") workbenchModel.rotation.y += delta * 0.28;
-  if (galleryModel && state.autoSpin) galleryModel.rotation.y += delta * 0.48;
+  if (workbenchModel && state.draft.shape !== "custom" && !prefersReducedMotion.matches && scenes.workbench.isVisible) {
+    workbenchModel.rotation.y += delta * 0.28;
+    scenes.workbench.needsRender = true;
+  }
+  if (galleryModel && state.autoSpin && scenes.gallery.isVisible) {
+    galleryModel.rotation.y += delta * 0.48;
+    scenes.gallery.needsRender = true;
+  }
 
   updatePrintScene(delta);
-  scenes.workbench.renderer.render(scenes.workbench.scene, scenes.workbench.camera);
-  scenes.printer.renderer.render(scenes.printer.scene, scenes.printer.camera);
-  scenes.gallery.renderer.render(scenes.gallery.scene, scenes.gallery.camera);
+  Object.values(scenes).forEach((viewer) => {
+    if (!viewer.isVisible || !viewer.needsRender) return;
+    viewer.renderer.render(viewer.scene, viewer.camera);
+    viewer.needsRender = false;
+  });
   requestAnimationFrame(animate);
+}
+
+function observeViewerVisibility() {
+  if (!("IntersectionObserver" in window)) return;
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      const viewer = Object.values(scenes).find((candidate) => candidate.canvas === entry.target);
+      if (viewer) viewer.isVisible = entry.isIntersecting;
+    });
+  }, { rootMargin: "180px 0px" });
+  Object.values(scenes).forEach((viewer) => observer.observe(viewer.canvas));
 }
 
 function bindEvents() {
   ui.shapeControls.addEventListener("click", (event) => {
     const button = event.target.closest("[data-shape]");
     if (!button) return;
+    if (state.draft.shape === button.dataset.shape) return;
+    rememberDraft();
     state.draft.shape = button.dataset.shape;
-    ui.shapeControls.querySelectorAll("button").forEach((item) => item.classList.toggle("active", item === button));
+    ui.shapeControls.querySelectorAll("button").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
     if (state.draft.shape === "custom" && !state.selectedComponentId && state.draft.components.length) {
       state.selectedComponentId = state.draft.components[0].id;
     }
@@ -1356,13 +1710,21 @@ function bindEvents() {
   ui.colorControls.addEventListener("click", (event) => {
     const button = event.target.closest("[data-color]");
     if (!button) return;
-    ui.colorControls.querySelectorAll("button").forEach((item) => item.classList.toggle("active", item === button));
+    rememberDraft();
+    ui.colorControls.querySelectorAll("button").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
     paintDraftColor(button.dataset.color, { resetTone: true });
     updateEstimate();
   });
 
   ui.customColorInput.addEventListener("input", () => {
-    ui.colorControls.querySelectorAll("button").forEach((item) => item.classList.remove("active"));
+    ui.colorControls.querySelectorAll("button").forEach((item) => {
+      item.classList.remove("active");
+      item.setAttribute("aria-pressed", "false");
+    });
     paintDraftColor(ui.customColorInput.value, { resetTone: true });
     updateEstimate();
   });
@@ -1372,7 +1734,13 @@ function bindEvents() {
     updateEstimate();
   });
 
-  ui.applyAllColorBtn.addEventListener("click", applyColorToAllParts);
+  ui.customColorInput.addEventListener("pointerdown", rememberDraft);
+  ui.toneRange.addEventListener("pointerdown", rememberDraft);
+
+  ui.applyAllColorBtn.addEventListener("click", () => {
+    rememberDraft();
+    applyColorToAllParts();
+  });
 
   ui.primitiveControls.addEventListener("click", (event) => {
     const button = event.target.closest("[data-primitive]");
@@ -1393,9 +1761,14 @@ function bindEvents() {
 
   ui.nameInput.addEventListener("input", () => {
     ui.nameInput.value = ui.nameInput.value.slice(0, 18);
+    saveDraft();
   });
 
-  ui.randomNameBtn.addEventListener("click", prepareNextName);
+  ui.randomNameBtn.addEventListener("click", () => {
+    rememberDraft();
+    prepareNextName();
+    saveDraft();
+  });
 
   ui.toolControls.addEventListener("click", (event) => {
     const toolButton = event.target.closest("[data-tool]");
@@ -1405,6 +1778,16 @@ function bindEvents() {
   });
 
   ui.deletePartBtn.addEventListener("click", deleteSelectedComponent);
+
+  ui.undoBtn.addEventListener("click", undoDraft);
+  ui.redoBtn.addEventListener("click", redoDraft);
+
+  [ui.selectedScaleRange, ui.sizeRange, ui.detailRange, ...ui.dimensionSliders].forEach((input) => {
+    input.addEventListener("pointerdown", rememberDraft);
+  });
+  [...ui.dimensionInputs, ...ui.positionInputs].forEach((input) => {
+    input.addEventListener("focus", rememberDraft);
+  });
 
   ui.selectedScaleRange.addEventListener("input", () => {
     setSelectedUniformScale(Number(ui.selectedScaleRange.value));
@@ -1439,7 +1822,11 @@ function bindEvents() {
   ui.paintControls.addEventListener("click", (event) => {
     const button = event.target.closest("[data-paint]");
     if (!button) return;
-    ui.paintControls.querySelectorAll("button").forEach((item) => item.classList.toggle("active", item === button));
+    ui.paintControls.querySelectorAll("button").forEach((item) => {
+      const active = item === button;
+      item.classList.toggle("active", active);
+      item.setAttribute("aria-pressed", String(active));
+    });
     paintSelected(button.dataset.paint);
   });
 
@@ -1477,25 +1864,52 @@ function bindEvents() {
     state.selectedId = card.dataset.collectionId;
     renderShelf();
     updateGalleryModel();
-    document.querySelector("#gallery")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToStage("#gallery");
   });
 
   ui.clearCollectionBtn.addEventListener("click", clearCollection);
 
   ui.speedBtn.addEventListener("click", () => {
+    if (!state.print) return;
     state.speed = state.speed === 1 ? 4 : 1;
     ui.speedBtn.textContent = state.speed === 1 ? "加速" : "正常";
+    ui.speedBtn.setAttribute("aria-pressed", String(state.speed !== 1));
+    showToast(state.speed === 1 ? "打印速度已恢复正常" : "演示加速已开启");
   });
 
   ui.spinBtn.addEventListener("click", () => {
     state.autoSpin = !state.autoSpin;
     ui.spinBtn.textContent = state.autoSpin ? "自动旋转" : "手动查看";
+    ui.spinBtn.setAttribute("aria-pressed", String(state.autoSpin));
+  });
+
+  ui.journeyLinks.forEach((link) => {
+    link.addEventListener("click", () => setJourneyStage(link.dataset.stageLink));
+  });
+
+  prefersReducedMotion.addEventListener("change", (event) => {
+    if (!event.matches) return;
+    state.autoSpin = false;
+    ui.spinBtn.textContent = "手动查看";
+    ui.spinBtn.setAttribute("aria-pressed", "false");
   });
 
   window.addEventListener("keydown", handleWorkbenchKeyboard);
 }
 
 function handleWorkbenchKeyboard(event) {
+  const modifier = event.ctrlKey || event.metaKey;
+  if (modifier && event.code === "KeyZ") {
+    event.preventDefault();
+    if (event.shiftKey) redoDraft();
+    else undoDraft();
+    return;
+  }
+  if (modifier && event.code === "KeyY") {
+    event.preventDefault();
+    redoDraft();
+    return;
+  }
   if (state.draft.shape !== "custom" || !selectedObject || state.editorTool === "draw") return;
   if (event.target instanceof HTMLInputElement) return;
   const step = event.shiftKey ? 0.2 : 0.08;
@@ -1513,6 +1927,7 @@ function handleWorkbenchKeyboard(event) {
   }[event.code];
   if (!move) return;
   event.preventDefault();
+  rememberDraft();
   selectedObject.position.x = THREE.MathUtils.clamp(selectedObject.position.x + move[0], -2.4, 2.4);
   selectedObject.position.y = THREE.MathUtils.clamp(selectedObject.position.y + move[1], 0, 2.5);
   selectedObject.position.z = THREE.MathUtils.clamp(selectedObject.position.z + move[2], -1.8, 1.8);
@@ -1538,11 +1953,39 @@ function initSceneProps() {
   scenes.gallery.scene.add(pedestal);
 }
 
+function initAccessibleControls() {
+  scenes.workbench.canvas.tabIndex = 0;
+  scenes.workbench.canvas.setAttribute("aria-label", "作品编辑预览。拖动旋转，滚轮缩放；自由创作选中零件后可用方向键移动。");
+  scenes.gallery.canvas.tabIndex = 0;
+  scenes.gallery.canvas.setAttribute("aria-label", "作品展示预览。拖动旋转，滚轮缩放，左右方向键也可旋转。");
+  scenes.gallery.canvas.addEventListener("keydown", (event) => {
+    if (!galleryModel || !["ArrowLeft", "ArrowRight"].includes(event.code)) return;
+    event.preventDefault();
+    state.autoSpin = false;
+    ui.spinBtn.textContent = "手动查看";
+    ui.spinBtn.setAttribute("aria-pressed", "false");
+    galleryModel.rotation.y += event.code === "ArrowLeft" ? -0.18 : 0.18;
+    scenes.gallery.needsRender = true;
+  });
+  document.querySelectorAll(".swatch").forEach((button) => {
+    button.setAttribute("aria-pressed", String(button.classList.contains("active")));
+  });
+  ui.speedBtn.disabled = true;
+  ui.spinBtn.textContent = state.autoSpin ? "自动旋转" : "手动查看";
+  ui.spinBtn.setAttribute("aria-pressed", String(state.autoSpin));
+}
+
 bindEvents();
 initSceneProps();
+initAccessibleControls();
+if (savedDraft?.name) ui.nameInput.value = savedDraft.name;
+syncDraftControls();
 updateWorkbenchModel();
 renderShelf();
 renderCollectionWall();
 updateGalleryModel();
 updateCounters();
+updateHistoryButtons();
+setJourneyStage(["studio", "production", "collection"].includes(location.hash.slice(1)) ? location.hash.slice(1) : "studio");
+observeViewerVisibility();
 animate();

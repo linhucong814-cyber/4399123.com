@@ -1,8 +1,8 @@
 const siteUrl = "https://4399123.com";
 const siteName = "4399123";
 const defaultDescription =
-  "4399123 是一个开放的 vibe coding 创作者社区基础设施，连接创作者、项目、想法和社区反馈。";
-const defaultImage = `${siteUrl}/assets/brand/4399123-domain-logo-transparent.png`;
+  "4399123 是一个为「创造想法」而生的 Vibe Coding 社区：把 AI 与 Vibe Coding 的想法做成可直接点击的作品，在作品、博客与社区讨论之间持续迭代。";
+const defaultImage = `${siteUrl}/assets/brand/4399123-og.png`;
 
 export function setPageSeo({
   title = siteName,
@@ -18,6 +18,7 @@ export function setPageSeo({
   document.title = fullTitle;
   setMeta("name", "description", description);
   setMeta("property", "og:site_name", siteName);
+  setMeta("property", "og:locale", "zh_CN");
   setMeta("property", "og:title", fullTitle);
   setMeta("property", "og:description", description);
   setMeta("property", "og:type", type);
@@ -35,17 +36,18 @@ export function setPageSeo({
       name: fullTitle,
       description,
       url: canonical,
+      inLanguage: "zh-CN",
     },
   );
 }
 
 export function defaultSeo() {
   setPageSeo({
-    title: "4399123",
+    title: "为创造想法而生的 Vibe Coding 社区",
     path: "/",
     jsonLd: {
       "@context": "https://schema.org",
-      "@type": "Blog",
+      "@type": "WebSite",
       name: "4399123",
       url: siteUrl,
       description: defaultDescription,

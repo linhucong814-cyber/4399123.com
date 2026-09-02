@@ -10,6 +10,7 @@ It collects AI coding experiments, small tools, project notes, community posts, 
 - Blog / Journal page source code
 - Vibe Coding category page source code
 - Search entrance and front-end navigation
+- 可折叠的首页背景风格选择器（含 6 套公开背景资源）
 - Community page front-end structure
 - Local content data for posts and projects
 - Static generation scripts

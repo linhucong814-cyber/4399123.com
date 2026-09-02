@@ -1,58 +1,127 @@
 <template>
-  <main class="site-shell">
-    <TopNav :items="navigationItems" />
-    <AuthFormPage v-if="isLoginRoute" mode="login" />
-    <AuthFormPage v-else-if="isRegisterRoute" mode="register" />
-    <AccountPage v-else-if="isAccountRoute" />
-    <AdminUsersPage v-else-if="isAdminUsersRoute" />
-    <CommunityPage v-else-if="isCommunityRoute" :post-id="communityPostId" />
-    <BlogPage v-else-if="isBlogRoute" :slug="blogSlug" />
-    <VibeCodingPage
-      v-else-if="isVibeCodingRoute"
-      :projects="vibeCodingProjects"
-      :posts="vibeCodingPosts"
-    />
-    <HomePage v-else-if="isHomeRoute" :projects="vibeCodingProjects" />
-    <section v-else class="not-found-page">
-      <p class="eyebrow">404</p>
-      <h1>没有找到这个入口</h1>
-      <p>这个地址暂时没有对应内容，可以回到首页或打开离线小游戏。</p>
-      <div class="hero-actions">
-        <a class="primary-link" href="/">返回首页</a>
-        <a class="secondary-link" href="/404notfound/">打开 404 游戏</a>
-      </div>
-    </section>
-  </main>
+  <div class="site-shell">
+    <a class="skip-link" href="#main-content" @click="focusMainContent">跳到主要内容</a>
+    <TopNav :items="navigationItems" :current-path="currentPath" />
+    <main id="main-content" ref="mainContent" class="page-content" tabindex="-1">
+      <AuthFormPage v-if="isLoginRoute" mode="login" />
+      <AuthFormPage v-else-if="isRegisterRoute" mode="register" />
+      <PasswordResetRequestPage v-else-if="isPasswordResetRequestRoute" />
+      <PasswordResetConfirmPage v-else-if="isPasswordResetConfirmRoute" />
+      <EmailVerifyPage v-else-if="isVerifyEmailRoute" />
+      <AccountPage v-else-if="isAccountRoute" />
+      <AccountSettingsPage v-else-if="isAccountSettingsRoute" />
+      <AdminDashboardPage v-else-if="isAdminRoute" />
+      <AdminUsersPage v-else-if="isAdminUsersRoute" />
+      <AdminContentPage v-else-if="isAdminContentRoute" />
+      <AdminAuditLogPage v-else-if="isAdminAuditLogRoute" />
+      <AdminVibeCodingSubmissionsPage v-else-if="isAdminVibeCodingSubmissionsRoute" />
+      <DocsPage v-else-if="isDocsRoute" />
+      <HelpCenterPage v-else-if="isHelpRoute" />
+      <UserProfilePage v-else-if="isUserProfileRoute" :user-id="userProfileId" />
+      <CommunityPage v-else-if="isCommunityRoute" :post-id="communityPostId" />
+      <BlogPage v-else-if="isBlogRoute" :slug="blogSlug" />
+      <VibeCodingShowcasePage
+        v-else-if="isVibeCodingShowcaseRoute"
+        :submissions="vibeCodingSubmissions"
+        :submissions-loading="vibeCodingSubmissionsLoading"
+        :submissions-error="vibeCodingSubmissionsError"
+      />
+      <VibeCodingSharePage v-else-if="isVibeCodingShareRoute" />
+      <VibeCodingPage
+        v-else-if="isVibeCodingRoute"
+        :projects="vibeCodingProjects"
+        :posts="vibeCodingPosts"
+        :submissions="vibeCodingSubmissions"
+        :submissions-loading="vibeCodingSubmissionsLoading"
+        :submissions-error="vibeCodingSubmissionsError"
+      />
+      <HomePage v-else-if="isHomeRoute" />
+      <section v-else class="not-found-page">
+        <p class="eyebrow">404</p>
+        <h1>没有找到这个入口</h1>
+        <p>这个地址暂时没有对应内容，可以回到首页或打开离线小游戏。</p>
+        <div class="hero-actions">
+          <a class="primary-link" href="/">返回首页</a>
+          <a class="secondary-link" href="/404notfound/">打开 404 游戏</a>
+        </div>
+      </section>
+    </main>
+  </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref, watchEffect } from "vue";
-import BlogPage from "./components/BlogPage.vue";
-import CommunityPage from "./components/CommunityPage.vue";
-import AccountPage from "./components/auth/AccountPage.vue";
-import AdminUsersPage from "./components/auth/AdminUsersPage.vue";
-import AuthFormPage from "./components/auth/AuthFormPage.vue";
+import { computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, ref, watchEffect } from "vue";
 import HomePage from "./components/HomePage.vue";
 import TopNav from "./components/TopNav.vue";
-import VibeCodingPage from "./components/VibeCodingPage.vue";
 import {
   navigationItems,
   vibeCodingProjects as fallbackVibeCodingProjects,
 } from "./data/site";
 import { localBlogPosts } from "./data/content";
+import { getApprovedVibeCodingSubmissions, getVibeCodingProjects } from "./services/vibeCoding";
 import { defaultSeo, setPageSeo } from "./utils/seo";
 
+const CommunityPage = defineAsyncComponent(() => import("./components/CommunityPage.vue"));
+const UserProfilePage = defineAsyncComponent(() => import("./components/UserProfilePage.vue"));
+const BlogPage = defineAsyncComponent(() => import("./components/BlogPage.vue"));
+const DocsPage = defineAsyncComponent(() => import("./components/DocsPage.vue"));
+const HelpCenterPage = defineAsyncComponent(() => import("./components/HelpCenterPage.vue"));
+const VibeCodingPage = defineAsyncComponent(() => import("./components/VibeCodingPage.vue"));
+const VibeCodingSharePage = defineAsyncComponent(() => import("./components/VibeCodingSharePage.vue"));
+const VibeCodingShowcasePage = defineAsyncComponent(() => import("./components/VibeCodingShowcasePage.vue"));
+const AuthFormPage = defineAsyncComponent(() => import("./components/auth/AuthFormPage.vue"));
+const EmailVerifyPage = defineAsyncComponent(() => import("./components/auth/EmailVerifyPage.vue"));
+const PasswordResetRequestPage = defineAsyncComponent(() => import("./components/auth/PasswordResetRequestPage.vue"));
+const PasswordResetConfirmPage = defineAsyncComponent(() => import("./components/auth/PasswordResetConfirmPage.vue"));
+const AccountPage = defineAsyncComponent(() => import("./components/auth/AccountPage.vue"));
+const AccountSettingsPage = defineAsyncComponent(() => import("./components/auth/AccountSettingsPage.vue"));
+const AdminDashboardPage = defineAsyncComponent(() => import("./components/auth/AdminDashboardPage.vue"));
+const AdminUsersPage = defineAsyncComponent(() => import("./components/auth/AdminUsersPage.vue"));
+const AdminContentPage = defineAsyncComponent(() => import("./components/auth/AdminContentPage.vue"));
+const AdminAuditLogPage = defineAsyncComponent(() => import("./components/auth/AdminAuditLogPage.vue"));
+const AdminVibeCodingSubmissionsPage = defineAsyncComponent(() => import("./components/auth/AdminVibeCodingSubmissionsPage.vue"));
+
 const currentPath = ref(window.location.pathname);
+const mainContent = ref(null);
 const vibeCodingProjects = ref([...fallbackVibeCodingProjects]);
+const vibeCodingSubmissions = ref([]);
+const vibeCodingSubmissionsLoading = ref(false);
+const vibeCodingSubmissionsError = ref("");
+const removedProjectJournalSlugs = new Set(["chinese-image-prompt-generator"]);
 const vibeCodingPosts = localBlogPosts.filter((post) =>
-  post.tags?.some((tag) => tag.toLowerCase() === "vibe coding"),
+  post.tags?.some((tag) => tag.toLowerCase() === "vibe coding") &&
+  !removedProjectJournalSlugs.has(post.slug),
 );
+const removedProjectHrefs = new Set([
+  "/vibecpu/",
+  "/vibe-coding/pulse-pomodoro/",
+  "/vibe-coding/ai-personality-test/",
+  "/vibe-coding/4399123agent/",
+  "/vibe-coding/chinese-image-prompt/",
+]);
 
 const isHomeRoute = computed(() => currentPath.value === "/");
 const isLoginRoute = computed(() => currentPath.value === "/login" || currentPath.value === "/login/");
 const isRegisterRoute = computed(() => currentPath.value === "/register" || currentPath.value === "/register/");
+const isPasswordResetRequestRoute = computed(
+  () => currentPath.value === "/forgot-password" || currentPath.value === "/forgot-password/",
+);
+const isPasswordResetConfirmRoute = computed(
+  () => currentPath.value === "/reset-password" || currentPath.value === "/reset-password/",
+);
+const isVerifyEmailRoute = computed(() => currentPath.value === "/verify-email" || currentPath.value === "/verify-email/");
 const isAccountRoute = computed(() => currentPath.value === "/account" || currentPath.value === "/account/");
+const isAccountSettingsRoute = computed(() => currentPath.value === "/account/settings" || currentPath.value === "/account/settings/");
+const isAdminRoute = computed(() => currentPath.value === "/admin" || currentPath.value === "/admin/");
 const isAdminUsersRoute = computed(() => currentPath.value === "/admin/users" || currentPath.value === "/admin/users/");
+const isAdminContentRoute = computed(() => currentPath.value === "/admin/content" || currentPath.value === "/admin/content/");
+const isAdminAuditLogRoute = computed(() => currentPath.value === "/admin/audit-log" || currentPath.value === "/admin/audit-log/");
+const isAdminVibeCodingSubmissionsRoute = computed(
+  () => currentPath.value === "/admin/vibe-coding-submissions" || currentPath.value === "/admin/vibe-coding-submissions/",
+);
+const isDocsRoute = computed(() => currentPath.value === "/docs" || currentPath.value === "/docs/");
+const isHelpRoute = computed(() => currentPath.value === "/help" || currentPath.value === "/help/");
+const isUserProfileRoute = computed(() => /^\/users\/[^/]+\/?$/.test(currentPath.value));
 const isCommunityRoute = computed(
   () =>
     currentPath.value === "/community" ||
@@ -65,9 +134,14 @@ const isBlogRoute = computed(
 const isVibeCodingRoute = computed(
   () =>
     currentPath.value === "/vibe-coding" ||
-    currentPath.value === "/vibe-coding/" ||
-    currentPath.value.startsWith("/vibe-coding/"),
+    currentPath.value === "/vibe-coding/",
 );
+const isVibeCodingShowcaseRoute = computed(
+  () =>
+    currentPath.value === "/vibe-coding/showcase" ||
+    currentPath.value === "/vibe-coding/showcase/",
+);
+const isVibeCodingShareRoute = computed(() => currentPath.value === "/vibe-coding/share" || currentPath.value === "/vibe-coding/share/");
 const blogSlug = computed(() => {
   if (!currentPath.value.startsWith("/blog/")) {
     return "";
@@ -82,30 +156,43 @@ const communityPostId = computed(() => {
 
   return decodeURIComponent(currentPath.value.replace(/^\/community\/posts\/?/, "").replace(/\/$/, ""));
 });
+const userProfileId = computed(() => {
+  if (!currentPath.value.startsWith("/users/")) {
+    return "";
+  }
+
+  return decodeURIComponent(currentPath.value.replace(/^\/users\/?/, "").replace(/\/$/, ""));
+});
 
 function syncPath() {
   currentPath.value = window.location.pathname;
 }
 
+function notifyRouteChange() {
+  window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+}
+
+function focusMainContent() {
+  nextTick(() => mainContent.value?.focus());
+}
+
 onMounted(() => {
   window.addEventListener("popstate", syncPath);
-  loadVibeCodingProjects();
+  window.addEventListener("community:navigate", notifyRouteChange);
+  if (!isHomeRoute.value) {
+    loadVibeCodingProjects();
+    loadVibeCodingSubmissions();
+  }
 });
 
 onUnmounted(() => {
   window.removeEventListener("popstate", syncPath);
+  window.removeEventListener("community:navigate", notifyRouteChange);
 });
 
 async function loadVibeCodingProjects() {
   try {
-    const response = await fetch("/api/vibe-coding/projects", {
-      credentials: "same-origin",
-    });
-    if (!response.ok) {
-      throw new Error("projects_request_failed");
-    }
-
-    const data = await response.json();
+    const data = await getVibeCodingProjects();
     const remoteProjects = Array.isArray(data.projects) ? data.projects : [];
     vibeCodingProjects.value = mergeProjects(remoteProjects, fallbackVibeCodingProjects);
   } catch {
@@ -113,12 +200,28 @@ async function loadVibeCodingProjects() {
   }
 }
 
+async function loadVibeCodingSubmissions() {
+  vibeCodingSubmissionsLoading.value = true;
+  vibeCodingSubmissionsError.value = "";
+  try {
+    const data = await getApprovedVibeCodingSubmissions();
+    vibeCodingSubmissions.value = Array.isArray(data.submissions) ? data.submissions : [];
+  } catch (err) {
+    vibeCodingSubmissions.value = [];
+    vibeCodingSubmissionsError.value = err.message || "读取分享作品失败。";
+  } finally {
+    vibeCodingSubmissionsLoading.value = false;
+  }
+}
+
 function mergeProjects(remoteProjects, fallbackProjects) {
   const map = new Map();
   for (const project of remoteProjects) {
+    if (isRemovedProject(project)) continue;
     map.set(projectKey(project), normalizeProject(project));
   }
   for (const project of fallbackProjects) {
+    if (isRemovedProject(project)) continue;
     const key = projectKey(project);
     map.set(key, {
       ...project,
@@ -130,6 +233,12 @@ function mergeProjects(remoteProjects, fallbackProjects) {
     });
   }
   return Array.from(map.values());
+}
+
+function isRemovedProject(project) {
+  const href = String(project?.href || "").split(/[?#]/, 1)[0];
+  const normalizedHref = href.endsWith("/") ? href : `${href}/`;
+  return removedProjectHrefs.has(normalizedHref);
 }
 
 function normalizeProject(project) {
@@ -162,7 +271,7 @@ watchEffect(() => {
     return;
   }
 
-  if (!isBlogRoute.value && !isLoginRoute.value && !isRegisterRoute.value && !isAccountRoute.value && !isAdminUsersRoute.value && !isCommunityRoute.value) {
+  if (!isBlogRoute.value && !isLoginRoute.value && !isRegisterRoute.value && !isPasswordResetRequestRoute.value && !isPasswordResetConfirmRoute.value && !isVerifyEmailRoute.value && !isAccountRoute.value && !isAccountSettingsRoute.value && !isAdminRoute.value && !isAdminUsersRoute.value && !isAdminContentRoute.value && !isAdminAuditLogRoute.value && !isAdminVibeCodingSubmissionsRoute.value && !isDocsRoute.value && !isHelpRoute.value && !isUserProfileRoute.value && !isCommunityRoute.value && !isVibeCodingShowcaseRoute.value && !isVibeCodingShareRoute.value) {
     setPageSeo({
       title: "404",
       description: "4399123 暂时没有找到这个入口。",

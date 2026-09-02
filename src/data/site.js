@@ -5,43 +5,61 @@ export const brandDigits = "4399123".split("").map((value, index) => ({
   index,
 }));
 
-export const brandLogo = {
-  src: "/assets/brand/4399123-domain-logo-transparent.png",
-  alt: "4399123",
-};
-
 export const navigationItems = [
+  {
+    label: "作品",
+    href: "/vibe-coding",
+    primary: true,
+  },
   {
     label: "社区",
     href: "/community",
+    primary: true,
   },
   {
     label: "博客",
     href: "/blog",
+    primary: true,
   },
   {
-    label: "Vibe Coding",
-    href: "/vibe-coding",
+    label: "文档",
+    href: "/docs",
+    primary: true,
   },
   {
-    label: "Image 提示词",
-    href: "/vibe-coding/chinese-image-prompt/",
+    label: "Agent 提示词模板生成器",
+    href: "/vibe-coding/agent-prompt-template/",
   },
   {
-    label: "番茄钟",
-    href: "/vibe-coding/pulse-pomodoro/",
+    label: "OpenClaw 第三方 API 配置生成器",
+    href: "/vibe-coding/openclaw-easy-config/",
   },
   {
-    label: "VibeCPU",
-    href: "/vibecpu/",
+    label: "如何使用 Codex 教学手册",
+    href: "/vibe-coding/codex-tutorial/",
+    group: "tutorials",
   },
   {
-    label: "AI 人格测试",
-    href: "/vibe-coding/ai-personality-test",
+    label: "ChatGPT 橙皮书",
+    href: "https://bozhoudev.github.io/codex-orange-book/",
+    external: true,
+    group: "tutorials",
   },
   {
-    label: "Agent AI",
-    href: "/vibe-coding/4399123agent/",
+    label: "图片画布",
+    href: "https://i.shinemoon.com/",
+    external: true,
+  },
+  {
+    label: "中转站",
+    href: "https://shinemoon.com/",
+    external: true,
+  },
+  {
+    label: "焚诀",
+    href: "https://fenjue.org/",
+    external: true,
+    group: "tutorials",
   },
 ];
 

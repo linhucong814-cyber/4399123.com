@@ -3,18 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Print Garden - 3D 打印收获游戏 Demo</title>
+    <meta name="description" content="在 Print Garden 里捏出独一无二的玩具，让它被虚拟 3D 打印机逐层打印并加入收藏。" />
+    <meta name="theme-color" content="#f7f2e8" />
+    <title>Print Garden - 3D 玩具创作工坊</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23ff735f'/%3E%3Cpath d='M12 33h40M32 12v40' stroke='%23fff9eb' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./style.css" />
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/"
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/addons/"
         }
       }
     </script>
   </head>
   <body>
+    <a class="skip-link" href="#studio">跳到创作工作台</a>
     <div class="app-shell">
       <header class="topbar">
         <a class="brand" href="#studio" aria-label="Print Garden 首页">
@@ -24,19 +28,40 @@
         <div class="top-actions">
           <a class="site-link" href="/" aria-label="访问 4399123.com 主站">4399123.com</a>
           <nav class="nav" aria-label="游戏区域">
-            <a href="#studio">工作台</a>
-            <a href="#production">打印与展示</a>
-            <a href="#collection">收藏墙</a>
+            <a href="#studio" data-stage-link="studio" aria-current="step">工作台</a>
+            <a href="#production" data-stage-link="production">打印与展示</a>
+            <a href="#collection" data-stage-link="collection">收藏墙</a>
           </nav>
         </div>
       </header>
 
       <main class="game-pages">
+        <nav class="journey" aria-label="创作进度">
+          <a href="#studio" data-stage-link="studio" aria-current="step">
+            <span>01</span>
+            <b>捏出灵感</b>
+            <small>选造型、调颜色</small>
+          </a>
+          <span class="journey-line" aria-hidden="true"></span>
+          <a href="#production" data-stage-link="production">
+            <span>02</span>
+            <b>逐层打印</b>
+            <small>看作品慢慢长大</small>
+          </a>
+          <span class="journey-line" aria-hidden="true"></span>
+          <a href="#collection" data-stage-link="collection">
+            <span>03</span>
+            <b>收获收藏</b>
+            <small>上色、陈列、升级</small>
+          </a>
+        </nav>
+
         <section class="workbench panel studio-page" id="studio" aria-label="3D 打印工作台">
           <div class="section-head">
             <div>
-              <p class="eyebrow">低门槛建模</p>
-              <h1>捏一个作品，交给打印机慢慢长出来</h1>
+              <p class="eyebrow">你的口袋玩具工坊</p>
+              <h1>捏一个小世界，<br />看它慢慢长出来</h1>
+              <p class="hero-copy">从一个简单造型开始，像搭积木一样创作，再把灵感变成值得收藏的打印玩具。</p>
             </div>
             <div class="level-pill">
               <span>工坊等级</span>
@@ -46,6 +71,7 @@
 
           <div class="preview-wrap">
             <canvas id="workbenchCanvas" aria-label="作品编辑预览"></canvas>
+            <div class="stage-tip" aria-hidden="true">拖动旋转 · 滚轮缩放</div>
             <div class="floating-card print-card">
               <span>预计打印</span>
               <strong id="estimateLabel">00:18</strong>
@@ -97,6 +123,8 @@
                   <button data-quick="duplicate">复制选中</button>
                   <button data-quick="mirror">镜像选中</button>
                   <button data-quick="clear">清空画布</button>
+                  <button id="undoBtn" type="button" disabled>撤销</button>
+                  <button id="redoBtn" type="button" disabled>重做</button>
                 </div>
               </div>
 
@@ -202,7 +230,10 @@
               </div>
             </div>
 
-            <button class="primary-action" id="startPrintBtn">开始打印</button>
+            <button class="primary-action" id="startPrintBtn" type="button">
+              <span>送去打印</span>
+              <small>让灵感逐层变成玩具</small>
+            </button>
           </div>
         </section>
 
@@ -210,20 +241,26 @@
         <section class="printer-zone panel" id="printer" aria-label="虚拟 3D 打印机">
           <div class="section-head compact">
             <div>
-              <p class="eyebrow">打印机</p>
+              <p class="eyebrow">步骤 02 · 魔法正在发生</p>
               <h2 id="printerTitle">空闲中</h2>
             </div>
-            <button class="ghost-button" id="speedBtn" title="演示加速">加速</button>
+            <button class="ghost-button" id="speedBtn" type="button" title="演示加速" aria-pressed="false">加速</button>
           </div>
 
           <div class="printer-scene">
             <canvas id="printerCanvas" aria-label="打印机运行画面"></canvas>
+            <div class="completion-card" id="completionCard" hidden>
+              <span class="completion-spark" aria-hidden="true">✦</span>
+              <p>打印完成</p>
+              <strong id="completionName">新作品</strong>
+              <span id="completionReward">准备收获</span>
+            </div>
             <div class="progress-block">
               <div class="progress-copy">
-                <span id="printStatus">选择作品后开始打印</span>
+                <span id="printStatus" aria-live="polite">选择作品后开始打印</span>
                 <b id="progressLabel">0%</b>
               </div>
-              <div class="progress-track" aria-label="打印进度">
+              <div class="progress-track" id="progressTrack" role="progressbar" aria-label="打印进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
                 <span id="progressBar"></span>
               </div>
             </div>
@@ -241,7 +278,7 @@
         <section class="gallery-zone panel" id="gallery" aria-label="展示台">
             <div class="section-head compact">
             <div>
-              <p class="eyebrow">展示台</p>
+              <p class="eyebrow">步骤 03 · 给作品一个舞台</p>
               <h2>已打印作品</h2>
             </div>
             <div class="stats-strip">
@@ -272,7 +309,7 @@
               <button class="swatch" style="--swatch: #6c83ff" data-paint="#6c83ff" aria-label="蓝紫色"></button>
               <button class="swatch" style="--swatch: #f4f0e8" data-paint="#f4f0e8" aria-label="陶瓷白"></button>
             </div>
-            <button class="ghost-button" id="spinBtn">自动旋转</button>
+            <button class="ghost-button" id="spinBtn" type="button" aria-pressed="true">自动旋转</button>
           </div>
 
           <div class="shelf" id="shelfList" aria-label="作品列表"></div>
@@ -291,6 +328,8 @@
         </div>
       </main>
     </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
     <script type="module" src="./src/main.js"></script>
   </body>

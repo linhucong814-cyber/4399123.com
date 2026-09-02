@@ -1,0 +1,24 @@
+/* 4399123 社区设计令牌 (M3-1) —— 作用域限定在 .community-page，仅浅色（站点无暗色主题） */
+.community-page {
+  --c-paper: #f6f7f3;
+  --c-surface: #ffffff;
+  --c-surface-2: #eef0ea;
+  --c-ink: #171918;
+  --c-muted: #6b7268;
+  --c-line: #dde1d8;
+  --c-green: #1e6f5c;
+  --c-green-soft: #e3efe9;
+  --c-blue: #2f5aa8;
+  --c-amber: #c98a1f;
+  --c-amber-soft: #f6ead0;
+  --c-clay: #c84f3a;
+
+  --c-shadow-hard: 4px 4px 0 var(--c-ink);
+  --c-shadow-soft: 0 1px 2px rgba(23, 25, 24, 0.06), 0 6px 20px -12px rgba(23, 25, 24, 0.18);
+
+  --c-radius: 12px;
+  --c-radius-sm: 9px;
+  --c-pill: 999px;
+
+  --c-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}

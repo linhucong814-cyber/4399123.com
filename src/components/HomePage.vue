@@ -1,103 +1,119 @@
 <template>
-  <HeroSection />
+  <section
+    class="minimal-home"
+    aria-labelledby="home-title"
+    :style="homeStyle"
+    @pointermove="handlePointerMove"
+    @pointerleave="resetPointer"
+  >
+    <h1 id="home-title" class="minimal-home__wordmark" aria-label="4399123">
+      <span
+        v-for="(digit, index) in digits"
+        :key="`${digit}-${index}`"
+        :style="{ '--digit-index': index }"
+        aria-hidden="true"
+      >{{ digit }}</span>
+    </h1>
 
-  <section id="latest-content" class="content-section home-latest-section" aria-labelledby="latest-heading">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">Latest</p>
-        <h2 id="latest-heading">最新内容</h2>
-      </div>
-      <a class="secondary-link compact-action" href="/blog">查看全部</a>
+    <p class="minimal-home__tagline">
+      为创造想法而生的 <span class="minimal-home__accent">Vibe Coding</span> 社区
+    </p>
+    <p class="minimal-home__lede">
+      把 AI 与 Vibe Coding 的想法做成可直接点击的作品，在作品、博客与社区讨论之间持续迭代。
+    </p>
+
+    <div class="minimal-home__actions">
+      <a class="minimal-home__cta minimal-home__cta--primary" href="/vibe-coding">浏览作品</a>
+      <a class="minimal-home__cta" href="/community">进入社区</a>
+      <a class="minimal-home__cta" href="/docs">了解 4399123</a>
     </div>
-    <div class="content-grid">
-      <a
-        v-for="post in latestPosts"
-        :key="post.slug"
-        class="content-card"
-        :href="postHref(post)"
-      >
-        <p class="blog-date">{{ post.date }}</p>
-        <h3>{{ post.title }}</h3>
-        <p>{{ post.summary }}</p>
-        <div class="tag-row">
-          <span v-for="tag in post.tags" :key="tag">{{ tag }}</span>
-        </div>
-        <strong>阅读全文</strong>
-      </a>
-    </div>
+
   </section>
 
-  <section class="content-section" aria-labelledby="thoughts-heading">
-    <div class="section-head">
-      <div>
-        <p class="eyebrow">Ideas</p>
-        <h2 id="thoughts-heading">Vibe Coding 想法</h2>
+  <section class="home-latest" aria-label="最新内容">
+    <div class="home-latest__col">
+      <div class="home-latest__head">
+        <h2>最新作品</h2>
+        <a class="home-latest__more" href="/vibe-coding">全部作品 →</a>
       </div>
-      <p class="section-summary">
-        快速记录那些还没长成项目、但值得被留下来的 AI/编程灵感。
-      </p>
+      <ul class="home-latest__list">
+        <li v-for="project in latestProjects" :key="project.slug">
+          <a class="home-latest__item" :href="projectHref(project)">
+            <span class="home-latest__date">{{ project.date }}</span>
+            <span class="home-latest__title">{{ project.title }}</span>
+            <span class="home-latest__summary">{{ project.summary }}</span>
+          </a>
+        </li>
+      </ul>
     </div>
-    <div class="note-list">
-      <a
-        v-for="post in thoughts"
-        :key="post.slug"
-        class="note-row"
-        :href="postHref(post)"
-      >
-        <span>{{ post.date }}</span>
-        <strong>{{ post.title }}</strong>
-        <small>{{ post.summary }}</small>
-      </a>
+
+    <div class="home-latest__col">
+      <div class="home-latest__head">
+        <h2>最新博客</h2>
+        <a class="home-latest__more" href="/blog">全部博客 →</a>
+      </div>
+      <ul class="home-latest__list">
+        <li v-for="post in latestPosts" :key="post.slug">
+          <a class="home-latest__item" :href="`/blog/${encodeURIComponent(post.slug)}`">
+            <span class="home-latest__date">{{ post.date }}</span>
+            <span class="home-latest__title">{{ post.title }}</span>
+            <span class="home-latest__summary">{{ post.summary }}</span>
+          </a>
+        </li>
+      </ul>
     </div>
-  </section>
-
-  <BranchSection :projects="projects" />
-
-  <section class="content-section two-column-section">
-    <article class="about-panel">
-      <p class="eyebrow">Interesting</p>
-      <h2>有趣分享</h2>
-      <a
-        v-for="item in interesting"
-        :key="item.slug"
-        class="share-link"
-        :href="postHref(item)"
-      >
-        <strong>{{ item.title }}</strong>
-        <span>{{ item.summary }}</span>
-      </a>
-    </article>
-
-    <article class="about-panel">
-      <p class="eyebrow">About</p>
-      <h2>关于 4399123</h2>
-      <p>
-        这里是一个个人实验场：发布 vibe coding 小想法、AI/编程实验、项目记录和偶然发现的有趣东西。
-        它不追求企业官网式的完整包装，更像一张持续生长的工作台。
-      </p>
-      <a class="text-button" href="/rss.xml">订阅 RSS</a>
-    </article>
   </section>
 </template>
 
 <script setup>
-import { computed } from "vue";
-import BranchSection from "./BranchSection.vue";
-import HeroSection from "./HeroSection.vue";
-import { interestingItems, thoughtPosts } from "../data/content";
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { projectItems, thoughtPosts } from "../data/content";
+import {
+  activeTheme,
+  cycleTheme,
+} from "./homeThemeState";
 
-const props = defineProps({
-  projects: {
-    type: Array,
-    required: true,
-  },
-});
+const digits = "4399123".split("");
+const pointerStyle = ref({ "--home-x": "0px", "--home-y": "0px" });
+const homeStyle = computed(() => ({
+  ...pointerStyle.value,
+  "--home-bg-image": `url("${activeTheme.value.image}")`,
+  "--home-bg-overlay": activeTheme.value.overlay,
+  "--home-ink": activeTheme.value.ink,
+  "--home-muted": activeTheme.value.muted,
+  "--home-accent": activeTheme.value.accent,
+  "--home-cta-bg": activeTheme.value.ctaBg,
+  "--home-cta-fg": activeTheme.value.ctaFg,
+}));
 
-const latestPosts = computed(() => [...thoughtPosts, ...interestingItems].slice(0, 4));
-const thoughts = computed(() => thoughtPosts.slice(0, 4));
-const interesting = computed(() => interestingItems.slice(0, 2));
+const latestProjects = projectItems.slice(0, 3);
+const latestPosts = thoughtPosts.slice(0, 3);
 
-function postHref(post) {
-  return `/blog/${encodeURIComponent(post.slug)}`;
+onMounted(() => window.addEventListener("keydown", handleThemeKeydown));
+onUnmounted(() => window.removeEventListener("keydown", handleThemeKeydown));
+
+function handleThemeKeydown(event) {
+  if (event.key === "ArrowRight") cycleTheme(1);
+  if (event.key === "ArrowLeft") cycleTheme(-1);
+}
+
+function projectHref(project) {
+  return project.href || `/blog/${encodeURIComponent(project.slug)}`;
+}
+
+function handlePointerMove(event) {
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
+
+  const rect = event.currentTarget.getBoundingClientRect();
+  const x = ((event.clientX - rect.left) / rect.width - 0.5) * 12;
+  const y = ((event.clientY - rect.top) / rect.height - 0.5) * 10;
+  pointerStyle.value = {
+    "--home-x": `${x.toFixed(2)}px`,
+    "--home-y": `${y.toFixed(2)}px`,
+  };
+}
+
+function resetPointer() {
+  pointerStyle.value = { "--home-x": "0px", "--home-y": "0px" };
 }
 </script>
