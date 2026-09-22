@@ -35,6 +35,11 @@ export const navigationItems = [
     href: "/vibe-coding/openclaw-easy-config/",
   },
   {
+    label: "提示词模板库",
+    href: "/vibe-coding/prompt-library/",
+    group: "tutorials",
+  },
+  {
     label: "如何使用 Codex 教学手册",
     href: "/vibe-coding/codex-tutorial/",
     group: "tutorials",

@@ -1,0 +1,13 @@
+{
+  "title": "Agent 提示词模板生成器",
+  "slug": "agent-prompt-template",
+  "date": "2026-05-30",
+  "summary": "免费在线 Agent 提示词生成器，提供通用任务和 /goal 任务两种模板，可把一句需求实时整理成清晰、可复制执行的提示词。",
+  "tags": ["Agent", "Prompt", "提示词", "小工具"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/agent-prompt-template/",
+  "eyebrow": "Vibe Coding / 005",
+  "actionLabel": "打开模板生成器",
+  "body": ["选择通用任务或 /goal 任务模板，输入目标即可生成可复制提示词，并可继续使用 AI 生成下一步。"]
+}

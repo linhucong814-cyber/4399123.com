@@ -4977,13 +4977,13 @@ body::after {
     gap: 12px;
   }
 
-
+  
 
   .brand-lockup {
     min-width: 0;
   }
 
-
+  
 
   .nav-actions {
     justify-self: end;
@@ -5200,9 +5200,9 @@ body::after {
     gap: 22px;
   }
 
+  
 
-
-
+  
 
   .logo-mark {
     width: 32px;
@@ -5213,19 +5213,19 @@ body::after {
     min-height: 260px;
   }
 
+  
 
+  
 
+  
 
-
-
-
-
+  
 
   .blog-card {
     min-height: auto;
   }
 
-
+  
 
   .note-row {
     grid-template-columns: auto 1fr;
@@ -5269,7 +5269,7 @@ body::after {
     height: 68px;
   }
 
-
+  
 
   .brand-lockup {
     width: auto;
@@ -5279,23 +5279,23 @@ body::after {
     gap: 8px;
   }
 
+  
 
-
-
+  
 
   .nav-menu {
     padding-bottom: 0;
     margin-bottom: 0;
   }
 
-
+  
 
   .nav-menu-panel {
     left: 50%;
     transform: translate(-50%, -6px);
   }
 
-
+  
 
   .nav-menu:hover .nav-menu-panel,
 .nav-menu:focus-within .nav-menu-panel,
@@ -5309,9 +5309,9 @@ body::after {
     text-align: center;
   }
 
+  
 
-
-
+  
 
   .nav-actions {
     grid-column: 2;
@@ -5329,9 +5329,9 @@ body::after {
     padding: 0 10px;
   }
 
+  
 
-
-
+  
 
   .hero {
     min-height: calc(100svh - 226px);
@@ -5342,11 +5342,11 @@ body::after {
     font-size: clamp(3.05rem, 17.4vw, 4.75rem);
   }
 
+  
 
+  
 
-
-
-
+  
 
   .project-preview,
 .vibe-page .project-preview {
@@ -5845,3 +5845,167 @@ body::after {
 
 
 /* ---------- RESPONSIVE ---------- */
+
+.prompt-library-page {
+  display: grid;
+  gap: 22px;
+}
+
+.prompt-library-toolbar,
+.prompt-library-actions,
+.prompt-meta,
+.prompt-library-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.prompt-library-filters .active {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+.prompt-library-toolbar {
+  align-items: end;
+  gap: 10px;
+}
+
+.prompt-library-search {
+  flex: 1 1 240px;
+  margin: 0;
+}
+
+.prompt-library-grid,
+.prompt-review-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.prompt-card,
+.prompt-review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  min-height: 180px;
+  padding: 18px;
+  border: 1px solid rgba(23, 25, 24, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+}
+
+.prompt-card h2,
+.prompt-review-card h3,
+.prompt-detail-body h2 {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.prompt-card p,
+.prompt-review-card p,
+.prompt-meta {
+  margin: 0;
+  color: var(--muted);
+}
+
+.prompt-meta {
+  margin-top: auto;
+  font-size: 0.82rem;
+  font-weight: 760;
+}
+
+.prompt-card:hover {
+  border-color: var(--ink);
+}
+
+.prompt-detail-body,
+.prompt-example {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.prompt-text {
+  max-height: 70vh;
+  margin: 0;
+  overflow: auto;
+  padding: 16px;
+  border: 1px solid rgba(23, 25, 24, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.82);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
+
+.prompt-library-page button {
+  font: inherit;
+  cursor: pointer;
+  appearance: none;
+}
+
+.prompt-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.prompt-image-grid figure {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+}
+
+.prompt-image-grid img,
+.prompt-card-image {
+  width: 100%;
+  max-height: 280px;
+  object-fit: cover;
+  border: 1px solid rgba(23, 25, 24, 0.12);
+  border-radius: 8px;
+  background: rgba(23, 25, 24, 0.04);
+}
+
+.prompt-card-image {
+  max-height: 160px;
+}
+
+.prompt-image-grid figcaption,
+.prompt-comment p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.prompt-comments,
+.prompt-comment,
+.prompt-comment-form,
+.prompt-upload {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.prompt-upload input[type="file"] {
+  max-width: 100%;
+}
+
+@media (max-width: 820px) {
+  .prompt-library-toolbar,
+  .prompt-library-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .prompt-library-actions > *,
+  .prompt-library-toolbar > button {
+    width: 100%;
+  }
+}
+
+
+
+

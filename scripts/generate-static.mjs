@@ -14,6 +14,10 @@ const publicPaths = [
   { loc: "/blog", priority: "0.8", changefreq: "weekly" },
   { loc: "/community", priority: "0.8", changefreq: "daily" },
   { loc: "/vibe-coding", priority: "0.8", changefreq: "weekly" },
+  { loc: "/docs", priority: "0.7", changefreq: "monthly" },
+  { loc: "/vibe-coding/agent-prompt-template/doc/", priority: "0.6", changefreq: "monthly" },
+  { loc: "/vibe-coding/prompt-library/", priority: "0.7", changefreq: "weekly" },
+  { loc: "/help", priority: "0.5", changefreq: "monthly" },
   { loc: "/404notfound/", priority: "0.2", changefreq: "yearly" },
   ...items.map((item) => ({
     loc: contentUrl(item),

@@ -2,6 +2,19 @@ import { computed, ref, watch } from "vue";
 
 export const backgroundThemes = [
   {
+    id: "mint",
+    name: "Mint Cobalt",
+    shortName: "Mint",
+    image: "/assets/home-backgrounds/bg-mint-cobalt.jpg",
+    alt: "薄荷绿与钴蓝抽象拼贴背景",
+    ink: "#141716",
+    muted: "#52635b",
+    accent: "#145f87",
+    ctaBg: "#141716",
+    ctaFg: "#f5f7ef",
+    overlay: "linear-gradient(90deg, rgba(226, 243, 230, 0.16), rgba(226, 243, 230, 0.04))",
+  },
+  {
     id: "sunlit",
     name: "Sunlit Paper",
     shortName: "Sunlit",
@@ -26,19 +39,6 @@ export const backgroundThemes = [
     ctaBg: "#f0c85a",
     ctaFg: "#171918",
     overlay: "linear-gradient(90deg, rgba(5, 8, 8, 0.18), rgba(5, 8, 8, 0.04))",
-  },
-  {
-    id: "mint",
-    name: "Mint Cobalt",
-    shortName: "Mint",
-    image: "/assets/home-backgrounds/bg-mint-cobalt.jpg",
-    alt: "薄荷绿与钴蓝抽象拼贴背景",
-    ink: "#141716",
-    muted: "#52635b",
-    accent: "#145f87",
-    ctaBg: "#141716",
-    ctaFg: "#f5f7ef",
-    overlay: "linear-gradient(90deg, rgba(226, 243, 230, 0.16), rgba(226, 243, 230, 0.04))",
   },
   {
     id: "newsprint",
@@ -82,12 +82,12 @@ export const backgroundThemes = [
 ];
 
 function readStoredTheme() {
-  if (typeof window === "undefined") return "sunlit";
+  if (typeof window === "undefined") return "mint";
   try {
     const stored = window.localStorage.getItem("4399123-home-theme");
-    return backgroundThemes.some((theme) => theme.id === stored) ? stored : "sunlit";
+    return backgroundThemes.some((theme) => theme.id === stored) ? stored : "mint";
   } catch {
-    return "sunlit";
+    return "mint";
   }
 }
 

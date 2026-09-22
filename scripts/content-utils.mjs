@@ -3,7 +3,7 @@ import path from "node:path";
 
 export const siteUrl = "https://4399123.com";
 export const siteDescription =
-  "4399123 是一个开放的 vibe coding 创作者社区基础设施，连接创作者、项目、想法和社区反馈。";
+  "4399123 是一个为「创造想法」而生的 Vibe Coding 社区：把 AI 与 Vibe Coding 的想法做成可直接点击的作品，在作品、博客与社区讨论之间持续迭代。";
 
 export async function readContent(rootDir = process.cwd()) {
   const contentDir = path.join(rootDir, "content");

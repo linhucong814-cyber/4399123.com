@@ -27,6 +27,9 @@
         :submissions-error="vibeCodingSubmissionsError"
       />
       <VibeCodingSharePage v-else-if="isVibeCodingShareRoute" />
+      <PromptLibraryEditorPage v-else-if="isPromptLibraryEditorRoute" :item-id="promptLibraryEditId" />
+      <PromptLibraryDetailPage v-else-if="isPromptLibraryDetailRoute" :item-id="promptLibraryItemId" />
+      <PromptLibraryPage v-else-if="isPromptLibraryListRoute" />
       <VibeCodingPage
         v-else-if="isVibeCodingRoute"
         :projects="vibeCodingProjects"
@@ -68,6 +71,9 @@ const DocsPage = defineAsyncComponent(() => import("./components/DocsPage.vue"))
 const HelpCenterPage = defineAsyncComponent(() => import("./components/HelpCenterPage.vue"));
 const VibeCodingPage = defineAsyncComponent(() => import("./components/VibeCodingPage.vue"));
 const VibeCodingSharePage = defineAsyncComponent(() => import("./components/VibeCodingSharePage.vue"));
+const PromptLibraryPage = defineAsyncComponent(() => import("./components/PromptLibraryPage.vue"));
+const PromptLibraryDetailPage = defineAsyncComponent(() => import("./components/PromptLibraryDetailPage.vue"));
+const PromptLibraryEditorPage = defineAsyncComponent(() => import("./components/PromptLibraryEditorPage.vue"));
 const VibeCodingShowcasePage = defineAsyncComponent(() => import("./components/VibeCodingShowcasePage.vue"));
 const AuthFormPage = defineAsyncComponent(() => import("./components/auth/AuthFormPage.vue"));
 const EmailVerifyPage = defineAsyncComponent(() => import("./components/auth/EmailVerifyPage.vue"));
@@ -142,6 +148,24 @@ const isVibeCodingShowcaseRoute = computed(
     currentPath.value === "/vibe-coding/showcase/",
 );
 const isVibeCodingShareRoute = computed(() => currentPath.value === "/vibe-coding/share" || currentPath.value === "/vibe-coding/share/");
+const isPromptLibraryListRoute = computed(
+  () => currentPath.value === "/vibe-coding/prompt-library" || currentPath.value === "/vibe-coding/prompt-library/",
+);
+const isPromptLibraryEditorRoute = computed(
+  () =>
+    currentPath.value === "/vibe-coding/prompt-library/new" ||
+    currentPath.value === "/vibe-coding/prompt-library/new/" ||
+    /^\/vibe-coding\/prompt-library\/\d+\/edit\/?$/.test(currentPath.value),
+);
+const isPromptLibraryDetailRoute = computed(() => /^\/vibe-coding\/prompt-library\/\d+\/?$/.test(currentPath.value));
+const promptLibraryItemId = computed(() => {
+  const match = currentPath.value.match(/^\/vibe-coding\/prompt-library\/(\d+)\/?$/);
+  return match ? match[1] : "";
+});
+const promptLibraryEditId = computed(() => {
+  const match = currentPath.value.match(/^\/vibe-coding\/prompt-library\/(\d+)\/edit\/?$/);
+  return match ? match[1] : "";
+});
 const blogSlug = computed(() => {
   if (!currentPath.value.startsWith("/blog/")) {
     return "";
@@ -268,6 +292,10 @@ watchEffect(() => {
       description: "4399123 的 AI 小实验、互动工具和快速成型项目入口。",
       path: "/vibe-coding",
     });
+    return;
+  }
+
+  if (isPromptLibraryListRoute.value || isPromptLibraryDetailRoute.value || isPromptLibraryEditorRoute.value) {
     return;
   }
 

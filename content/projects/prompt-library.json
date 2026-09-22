@@ -1,0 +1,13 @@
+{
+  "title": "提示词模板库",
+  "slug": "prompt-library",
+  "date": "2026-09-22",
+  "summary": "浏览、复制和分享有趣的提示词模板。大家可以投稿，站主也可以直接发布提示词和示例。",
+  "tags": ["提示词", "教程", "Agent", "模板"],
+  "category": "projects",
+  "cover": "/assets/brand/4399123-domain-logo-transparent.png",
+  "href": "/vibe-coding/prompt-library/",
+  "eyebrow": "教程 / 提示词",
+  "actionLabel": "打开提示词库",
+  "body": ["一个放在教程里的提示词模板库。公开内容可以搜索、筛选和复制；登录用户可以投稿，审核通过后展示。"]
+}
