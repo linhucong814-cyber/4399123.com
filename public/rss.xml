@@ -5,8 +5,15 @@
     <link>https://4399123.com</link>
     <description>4399123 是一个为「创造想法」而生的 Vibe Coding 社区：把 AI 与 Vibe Coding 的想法做成可直接点击的作品，在作品、博客与社区讨论之间持续迭代。</description>
     <language>zh-CN</language>
-    <lastBuildDate>Tue, 22 Sep 2026 12:41:08 GMT</lastBuildDate>
+    <lastBuildDate>Sat, 26 Sep 2026 08:18:11 GMT</lastBuildDate>
     <atom:link href="https://4399123.com/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title><![CDATA[模型会趋同，真正绕不开的是 Agent Harness]]></title>
+      <link>https://4399123.com/blog/agent-harness-moat</link>
+      <guid>https://4399123.com/blog/agent-harness-moat</guid>
+      <pubDate>Thu, 24 Sep 2026 00:00:00 GMT</pubDate>
+      <description><![CDATA[近几个月在做 API 和 token 生意，刚想明白一件事：模型能力会无限靠近趋同，价格会被压到接近成本。真正绕不开的是 Agent Harness，真正给模型定价的是 Agent 生态有没有护城河。]]></description>
+    </item>
     <item>
       <title><![CDATA[4399123 社区上线：把项目反馈和作品讨论放到同一个入口]]></title>
       <link>https://4399123.com/blog/community-launch</link>
