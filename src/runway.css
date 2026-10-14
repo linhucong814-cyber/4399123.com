@@ -1247,7 +1247,7 @@
   padding: clamp(36px, 6vw, 76px) 0 32px;
 }
 
-.docs-page :where(h1, h2, p, ol, ul) {
+.docs-page :where(h1, h2, h3, p, ol, ul) {
   margin: 0;
 }
 
@@ -1298,7 +1298,7 @@
   color: var(--green);
 }
 
-.docs-hero h1 {
+.docs-hero-title {
   margin-top: clamp(24px, 4vw, 46px);
   color: var(--ink);
   font-size: clamp(3.55rem, 7vw, 6.4rem);
@@ -1307,7 +1307,7 @@
   line-height: 0.9;
 }
 
-.docs-hero h1 span {
+.docs-hero-title span {
   display: block;
   color: var(--green);
 }
@@ -1481,8 +1481,8 @@
   padding: clamp(56px, 8vw, 100px) 0;
 }
 
-.docs-section h2,
-.docs-belief h2 {
+.docs-section > .docs-section-title,
+.docs-belief > .docs-section-title {
   max-width: 720px;
   margin-top: 17px;
   color: var(--ink);
@@ -1552,7 +1552,7 @@
   grid-column: 1 / -1;
 }
 
-.docs-section--split h2,
+.docs-section--split > .docs-section-title,
 .docs-section--split > p:not(.docs-section-index) {
   margin-top: 0;
 }
@@ -1604,7 +1604,7 @@
   color: var(--yellow);
 }
 
-.docs-belief h2 {
+.docs-belief > .docs-section-title {
   position: relative;
   z-index: 1;
   color: var(--bg);
@@ -1752,7 +1752,7 @@
     grid-template-columns: 1fr;
   }
 
-  .docs-section--split h2,
+  .docs-section--split > .docs-section-title,
 .docs-section--split > p:not(.docs-section-index) {
     margin-top: 0;
   }
@@ -1814,7 +1814,7 @@
     flex-basis: 40px;
   }
 
-  .docs-hero h1 {
+  .docs-hero-title {
     font-size: clamp(3.2rem, 17vw, 4.4rem);
   }
 
@@ -1839,7 +1839,7 @@
     font-size: 0.66rem;
   }
 
-  .docs-belief h2 br {
+  .docs-belief > .docs-section-title br {
     display: none;
   }
 

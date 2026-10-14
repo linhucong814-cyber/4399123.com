@@ -1,0 +1,22 @@
+{
+  "height": "38px",
+  "mobile-height": "44px",
+  "logo": "28px",
+  "mobile-logo": "26px",
+  "brand-font": "18px",
+  "mobile-brand-font": "16px",
+  "font": "14px",
+  "control": "30px",
+  "gutter": "24px",
+  "mobile-gutter": "12px",
+  "gap": "24px",
+  "brand-gap": "10px",
+  "item-gap": "4px",
+  "item-pad": "10px",
+  "radius": "8px",
+  "line": "1px",
+  "divider": "20px",
+  "icon-font": "18px",
+  "shadow": "0 4px 20px rgba(23, 25, 24, 0.06)",
+  "touch-control": "44px"
+}

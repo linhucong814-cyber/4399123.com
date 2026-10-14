@@ -11,8 +11,9 @@ export function setPageSeo({
   image = defaultImage,
   type = "website",
   jsonLd,
+  includeSiteName = true,
 } = {}) {
-  const fullTitle = title === siteName ? siteName : `${title} | ${siteName}`;
+  const fullTitle = title === siteName || !includeSiteName ? title : `${title} | ${siteName}`;
   const canonical = new URL(path, siteUrl).toString();
 
   document.title = fullTitle;
@@ -43,7 +44,8 @@ export function setPageSeo({
 
 export function defaultSeo() {
   setPageSeo({
-    title: "为创造想法而生的 Vibe Coding 社区",
+    title: "4399123 为创造想法而生的 Vibe Coding 社区",
+    includeSiteName: false,
     path: "/",
     jsonLd: {
       "@context": "https://schema.org",

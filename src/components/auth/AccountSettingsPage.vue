@@ -13,6 +13,10 @@
     </div>
 
     <div v-if="isLoading" class="blog-state">正在读取账号资料...</div>
+    <div v-else-if="loadError" class="auth-panel account-card" role="alert">
+      <p>{{ loadError }}</p>
+      <button class="secondary-link compact-action" type="button" @click="loadUser">重新加载</button>
+    </div>
 
     <div v-else-if="!user" class="auth-panel account-card">
       <p class="auth-lead">登录后可以编辑头像、用户名和简介。</p>
@@ -25,7 +29,7 @@
     <div v-else class="account-layout">
       <aside class="auth-panel account-summary">
         <div class="profile-avatar" :class="{ empty: !user.avatarUrl }">
-          <img v-if="user.avatarUrl" :src="user.avatarUrl" :alt="`${user.username} 的头像`" />
+          <img v-if="user.avatarUrl && !avatarFailed" :src="user.avatarUrl" :alt="`${user.username} 的头像`" @error="avatarFailed = true" />
           <span v-else>{{ userInitial }}</span>
         </div>
         <div>
@@ -36,6 +40,13 @@
           <span :class="{ verified: user.emailVerified }">{{ user.emailVerified ? "邮箱已验证" : "邮箱待验证" }}</span>
           <span>{{ statusLabel(user.status) }}</span>
         </div>
+        <nav class="settings-navigation" aria-label="账户设置分区">
+          <a href="#settings-profile">基础资料</a>
+          <a href="#settings-security">登录与安全</a>
+          <a href="#settings-password">修改密码</a>
+          <a href="#settings-email">绑定邮箱</a>
+          <a href="#settings-devices">登录设备</a>
+        </nav>
       </aside>
 
       <div class="account-main">
@@ -44,62 +55,73 @@
           <a class="primary-link compact-action" href="/verify-email">验证邮箱</a>
         </div>
 
-        <form class="auth-panel account-card" @submit.prevent="handleProfileSubmit">
+        <form id="settings-profile" class="auth-panel account-card" :aria-busy="isSaving" @submit.prevent="handleProfileSubmit">
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Profile</p>
               <h3>基础资料</h3>
             </div>
-            <button class="primary-link compact-action" type="submit" :disabled="isSaving || !user.emailVerified">
-              {{ isSaving ? "保存中..." : "保存资料" }}
-            </button>
+            <span class="field-help">头像上传后立即生效，用户名和简介需保存。</span>
           </div>
 
           <label class="field-label">
             用户名
-            <input v-model.trim="profileForm.username" autocomplete="username" required minlength="3" maxlength="32" :disabled="!user.emailVerified" />
+            <input ref="usernameInput" v-model="profileForm.username" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="1" aria-describedby="username-help username-change-help username-error" :aria-invalid="!!profileErrors.username" :disabled="profileBusy || !user.emailVerified || usernameLocked" @input="clearProfileMessages" />
           </label>
-          <p class="field-help">3-32 位字母、数字（支持中文）、下划线、点或短横线。</p>
+          <p id="username-help" class="field-help">{{ USERNAME_HELP }} {{ characterCount(normalizeUsername(profileForm.username)) }}/32</p>
+          <p id="username-change-help" class="field-help">{{ usernameChangeHelp }}</p>
+          <p id="username-error" v-show="profileErrors.username" class="form-message error-state" role="alert">{{ profileErrors.username }}</p>
 
           <label class="field-label">
-            联系邮箱
-            <input :value="user.email" autocomplete="email" disabled />
+            登录邮箱
+            <input :value="user.email" type="email" readonly aria-describedby="profile-email-help" />
           </label>
-          <p class="field-help">登录邮箱可以在下方「修改绑定邮箱」中更换。</p>
+          <p id="profile-email-help" class="field-help">用于登录和找回密码。<a href="#settings-email">修改绑定邮箱</a></p>
 
           <label class="field-label">
             个人简介
-            <textarea v-model.trim="profileForm.bio" maxlength="280" rows="4" placeholder="用一句话介绍你正在做什么。" :disabled="!user.emailVerified" />
+            <textarea ref="bioInput" v-model="profileForm.bio" rows="4" aria-describedby="bio-help bio-error" :aria-invalid="!!profileErrors.bio" placeholder="用一句话介绍你正在做什么。" :disabled="profileBusy || !user.emailVerified" @input="clearProfileMessages" />
           </label>
-          <p class="field-help">{{ profileForm.bio.length }}/280</p>
+          <p id="bio-help" class="field-help">{{ characterCount(normalizeBio(profileForm.bio)) }}/280 个字符，将显示在公开主页。</p>
+          <p id="bio-error" v-show="profileErrors.bio" class="form-message error-state" role="alert">{{ profileErrors.bio }}</p>
 
           <label class="field-label">
             头像
-            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" :disabled="isUploadingAvatar || !user.emailVerified" @change="handleAvatarChange" />
+            <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-describedby="avatar-help" :disabled="profileBusy || !user.emailVerified" @change="handleAvatarChange" />
           </label>
-          <p class="field-help">支持 JPG、PNG、GIF、WebP，最大 2MB。</p>
+          <p id="avatar-help" class="field-help">{{ isUploadingAvatar ? "头像上传中，请稍候..." : "支持 JPG、PNG、GIF、WebP，最大 2MB。上传后立即生效。" }}</p>
 
-          <p v-if="profileMessage" class="form-message">{{ profileMessage }}</p>
-          <p v-if="error" class="form-message error-state">{{ error }}</p>
+          <p v-if="profileMessage" class="form-message" role="status">{{ profileMessage }}</p>
+          <p v-if="error" class="form-message error-state" role="alert">{{ error }}</p>
+          <div class="profile-save-actions">
+            <span class="field-help" role="status">{{ profileDirty ? "有尚未保存的修改" : "资料已同步" }}</span>
+            <div class="inline-actions">
+              <button class="secondary-link compact-action" type="button" :disabled="profileBusy || !profileDirty" @click="resetProfile">撤销修改</button>
+              <button class="primary-link compact-action" type="submit" :disabled="profileBusy || !profileDirty || !user.emailVerified">
+                {{ isSaving ? "保存中..." : "保存资料" }}
+              </button>
+            </div>
+          </div>
         </form>
 
-        <div class="auth-panel account-card">
+        <div id="settings-security" class="auth-panel account-card">
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Security</p>
               <h3>登录与安全</h3>
             </div>
-            <button class="secondary-link compact-action" type="button" @click="handleLogout">退出登录</button>
+            <button class="secondary-link compact-action" type="button" :disabled="anyMutationBusy" @click="handleLogout">{{ isLoggingOut ? "退出中..." : "退出登录" }}</button>
           </div>
 
           <div class="user-info-grid">
             <span>用户 ID</span><strong>{{ user.id }}</strong>
             <span>邮箱</span><strong>{{ user.email }}</strong>
             <span>注册方式</span><strong>账号密码注册</strong>
-            <span>用户名可改时间</span><strong>{{ formatTime(user.canChangeUsernameAt) }}</strong>
-            <span>来源项目</span><strong>{{ user.sourceProject }}</strong>
+            <span>用户名可改时间</span><strong>{{ usernameLocked ? formatTime(user.canChangeUsernameAt) : "现在可以修改" }}</strong>
+            <span>注册时间</span><strong>{{ formatTime(user.registeredAt) }}</strong>
             <span>最近登录</span><strong>{{ formatTime(user.lastLoginAt) }}</strong>
           </div>
+          <p v-if="logoutError" class="form-message error-state" role="alert">{{ logoutError }}</p>
 
           <div class="auth-notice neutral">
             <p>可以在下方修改密码或换绑邮箱；忘记密码时也可以通过已验证邮箱重置。</p>
@@ -110,67 +132,68 @@
           </div>
         </div>
 
-        <form class="auth-panel account-card" @submit.prevent="handleChangePassword">
+        <form id="settings-password" class="auth-panel account-card" :aria-busy="isChangingPassword" @submit.prevent="handleChangePassword">
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Password</p>
               <h3>修改密码</h3>
             </div>
-            <button class="primary-link compact-action" type="submit" :disabled="isChangingPassword">
+            <button class="primary-link compact-action" type="submit" :disabled="securityBusy">
               {{ isChangingPassword ? "提交中..." : "更新密码" }}
             </button>
           </div>
 
           <label class="field-label">
             当前密码
-            <input v-model="passwordForm.current" type="password" autocomplete="current-password" required />
+            <input v-model="passwordForm.current" type="password" autocomplete="current-password" required :disabled="securityBusy" />
           </label>
           <p v-if="passwordErrors.current" class="form-message error-state">{{ passwordErrors.current }}</p>
 
           <label class="field-label">
             新密码
-            <input v-model="passwordForm.next" type="password" autocomplete="new-password" required minlength="10" />
+            <input v-model="passwordForm.next" type="password" autocomplete="new-password" required minlength="10" :disabled="securityBusy" />
           </label>
           <label class="field-label">
             确认新密码
-            <input v-model="passwordForm.confirm" type="password" autocomplete="new-password" required minlength="10" />
+            <input v-model="passwordForm.confirm" type="password" autocomplete="new-password" required minlength="10" :disabled="securityBusy" />
           </label>
           <p v-if="passwordErrors.next" class="form-message error-state">{{ passwordErrors.next }}</p>
           <p class="field-help">至少 10 位，避免使用常见密码或纯数字密码。修改成功后，其他设备上的登录会话将失效。</p>
 
-          <p v-if="passwordMessage" class="form-message">{{ passwordMessage }}</p>
-          <p v-if="passwordError" class="form-message error-state">{{ passwordError }}</p>
+          <p v-if="passwordMessage" class="form-message" role="status">{{ passwordMessage }}</p>
+          <p v-if="passwordError" class="form-message error-state" role="alert">{{ passwordError }}</p>
         </form>
 
-        <form class="auth-panel account-card" @submit.prevent="handleEmailSubmit">
+        <form id="settings-email" class="auth-panel account-card" :aria-busy="emailBusy" @submit.prevent="handleEmailSubmit">
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Email</p>
               <h3>修改绑定邮箱</h3>
             </div>
-            <button class="primary-link compact-action" type="submit" :disabled="isRequestingEmailCode || isConfirmingEmail">
+            <button class="primary-link compact-action" type="submit" :disabled="securityBusy || (emailStep === 1 && emailCooldownActive)">
               {{ emailSubmitLabel }}
             </button>
           </div>
+          <p class="field-help">{{ emailStep === 1 ? "第 1 步：验证当前密码，发送验证码" : "第 2 步：验证新邮箱，确认换绑" }}</p>
 
           <template v-if="emailStep === 1">
             <label class="field-label">
               当前密码
-              <input v-model="emailForm.currentPassword" type="password" autocomplete="current-password" required />
+              <input v-model="emailForm.currentPassword" type="password" autocomplete="current-password" required :disabled="securityBusy" />
             </label>
             <p v-if="emailErrors.password" class="form-message error-state">{{ emailErrors.password }}</p>
 
             <label class="field-label">
               新邮箱
-              <input v-model.trim="emailForm.newEmail" type="email" autocomplete="email" required />
+              <input v-model.trim="emailForm.newEmail" type="email" autocomplete="email" required :disabled="securityBusy" />
             </label>
             <p v-if="emailErrors.email" class="form-message error-state">{{ emailErrors.email }}</p>
             <p class="field-help">我们会向新邮箱发送 6 位验证码，验证通过后完成换绑；旧邮箱会收到安全通知。</p>
           </template>
           <template v-else>
             <div class="auth-notice neutral">
-              <p>验证码已发送至 {{ emailForm.newEmail }}。</p>
-              <button type="button" class="secondary-link compact-action" @click="backToEmailForm">返回修改</button>
+              <p>请查收 {{ emailForm.newEmail }} 的验证码。{{ emailCodeMinutes ? `验证码 ${emailCodeMinutes} 分钟内有效。` : "" }}</p>
+              <button type="button" class="secondary-link compact-action" :disabled="securityBusy" @click="backToEmailForm">返回修改</button>
             </div>
             <label class="field-label">
               邮箱验证码
@@ -181,24 +204,26 @@
                 maxlength="6"
                 placeholder="6 位数字验证码"
                 required
+                :disabled="securityBusy"
               />
             </label>
             <p v-if="emailErrors.code" class="form-message error-state">{{ emailErrors.code }}</p>
             <button
               type="button"
               class="secondary-link compact-action"
-              :disabled="isRequestingEmailCode || cooldownSeconds > 0"
+              :disabled="securityBusy || emailCooldownActive"
               @click="handleRequestEmailCode"
             >
               {{ emailResendLabel }}
             </button>
           </template>
 
-          <p v-if="emailMessage" class="form-message">{{ emailMessage }}</p>
-          <p v-if="emailError" class="form-message error-state">{{ emailError }}</p>
+          <p v-if="emailStep === 1 && emailCooldownActive" class="field-help" role="status">{{ cooldownSeconds }} 秒后可向此邮箱重新发送验证码。</p>
+          <p v-if="emailMessage" class="form-message" role="status">{{ emailMessage }}</p>
+          <p v-if="emailError" class="form-message error-state" role="alert">{{ emailError }}</p>
         </form>
 
-        <div class="auth-panel account-card">
+        <div id="settings-devices" class="auth-panel account-card">
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Devices</p>
@@ -207,7 +232,7 @@
             <button
               class="secondary-link compact-action"
               type="button"
-              :disabled="isRevokingOthers || sessions.length <= 1"
+              :disabled="sessionBusy || sessionsLoading || !sessions.some(item => !item.current)"
               @click="openRevokeOthers"
             >
               退出其他所有设备
@@ -215,7 +240,10 @@
           </div>
 
           <div v-if="sessionsLoading" class="inline-state">正在读取登录设备...</div>
-          <div v-else-if="sessionsError" class="inline-state error-state">{{ sessionsError }}</div>
+          <div v-else-if="sessionsError" class="inline-state error-state" role="alert">
+            {{ sessionsError }}
+            <button type="button" class="secondary-link compact-action" @click="loadSessions">重新加载设备</button>
+          </div>
           <div v-else class="device-list">
             <div v-for="item in sessions" :key="item.id" class="device-row" :class="{ current: item.current }">
               <div>
@@ -230,7 +258,7 @@
                 v-if="!item.current"
                 class="secondary-link compact-action"
                 type="button"
-                :disabled="revokingSessionId === item.id"
+                :disabled="sessionBusy || sessionsLoading"
                 @click="handleRevokeSession(item)"
               >
                 {{ revokingSessionId === item.id ? "退出中..." : "退出" }}
@@ -238,7 +266,7 @@
             </div>
             <p v-if="!sessions.length" class="inline-state">暂无登录设备记录。</p>
           </div>
-          <p v-if="sessionsMessage" class="form-message">{{ sessionsMessage }}</p>
+          <p v-if="sessionsMessage" class="form-message" role="status">{{ sessionsMessage }}</p>
         </div>
       </div>
     </div>
@@ -251,18 +279,29 @@
       confirm-label="确认退出"
       :busy="isRevokingOthers"
       :error="revokeOthersDialog.error"
-      @cancel="revokeOthersDialog.open = false"
+      @cancel="!isRevokingOthers && (revokeOthersDialog.open = false)"
       @confirm="confirmRevokeOthers"
+    />
+    <AdminConfirmDialog
+      :open="renameDialogOpen"
+      title="确认修改用户名"
+      :message="`用户名将改为「${normalizeUsername(profileForm.username)}」。${user?.isAdmin ? '' : '修改后 30 天内无法再次更改。'}账号 ID、已有内容和公开主页链接保持不变。`"
+      :with-reason="false"
+      confirm-label="确认并保存"
+      :busy="isSaving"
+      @cancel="!isSaving && (renameDialogOpen = false)"
+      @confirm="saveProfile"
     />
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref } from "vue";
 import {
   changePassword,
   confirmEmailChange,
   getSessions,
+  getCurrentUser,
   logoutUser,
   requestEmailChange,
   revokeOtherSessions,
@@ -271,15 +310,26 @@ import {
   uploadAvatar,
 } from "../../services/auth";
 import AdminConfirmDialog from "./AdminConfirmDialog.vue";
-import { refreshAuth, setAuthUser } from "../../services/authState";
+import { setAuthUser } from "../../services/authState";
 import { useCooldown } from "../../utils/useCooldown";
 import { setPageSeo } from "../../utils/seo";
+import { USERNAME_HELP, USERNAME_RE, avatarValidationError, characterCount, normalizeBio, normalizeUsername, profileIsDirty, usernameIsLocked } from "../../utils/accountProfile";
 
 const CODE_RE = /^\d{6}$/;
 
 const isLoading = ref(true);
+const loadError = ref("");
 const isSaving = ref(false);
 const isUploadingAvatar = ref(false);
+const isLoggingOut = ref(false);
+const logoutError = ref("");
+const avatarFailed = ref(false);
+const usernameInput = ref(null);
+const bioInput = ref(null);
+const profileErrors = reactive({ username: "", bio: "" });
+const renameDialogOpen = ref(false);
+const now = ref(Date.now());
+let clockTimer;
 const user = ref(null);
 const error = ref("");
 const profileMessage = ref("");
@@ -301,7 +351,11 @@ const emailMessage = ref("");
 const emailError = ref("");
 const emailForm = reactive({ currentPassword: "", newEmail: "", code: "" });
 const emailErrors = reactive({ password: "", email: "", code: "" });
-const { cooldownSeconds, startCooldown } = useCooldown();
+const { cooldownSeconds, startCooldown, stopCooldown } = useCooldown();
+const cooldownEmail = ref("");
+const emailCodeMinutes = ref(0);
+const emailCooldownActive = computed(() => cooldownSeconds.value > 0 && cooldownEmail.value === emailForm.newEmail.trim().toLowerCase());
+const emailBusy = computed(() => isRequestingEmailCode.value || isConfirmingEmail.value);
 
 const sessions = ref([]);
 const sessionsLoading = ref(false);
@@ -310,6 +364,18 @@ const sessionsMessage = ref("");
 const revokingSessionId = ref(0);
 const isRevokingOthers = ref(false);
 const revokeOthersDialog = reactive({ open: false, error: "" });
+const anyMutationBusy = computed(() => isSaving.value || isUploadingAvatar.value || isLoggingOut.value || isChangingPassword.value || emailBusy.value || isRevokingOthers.value || !!revokingSessionId.value);
+const profileBusy = anyMutationBusy;
+const securityBusy = anyMutationBusy;
+const sessionBusy = anyMutationBusy;
+const profileDirty = computed(() => profileIsDirty(profileForm, user.value));
+const usernameLocked = computed(() => usernameIsLocked(user.value, now.value));
+const usernameChangeHelp = computed(() => {
+  if (user.value?.isAdmin) return "管理员可修改用户名。公开主页链接不受影响。";
+  return usernameLocked.value
+    ? `每 30 天可修改一次，下次可改时间：${formatTime(user.value.canChangeUsernameAt)}（北京时间）。期间仍可修改简介和头像。`
+    : "每 30 天可修改一次。修改用户名不影响账号 ID、已有内容和公开主页链接。";
+});
 
 const emailSubmitLabel = computed(() => {
   if (emailStep.value === 1) return isRequestingEmailCode.value ? "发送中..." : "发送验证码";
@@ -317,11 +383,11 @@ const emailSubmitLabel = computed(() => {
 });
 const emailResendLabel = computed(() => {
   if (isRequestingEmailCode.value) return "发送中...";
-  if (cooldownSeconds.value > 0) return `${cooldownSeconds.value} 秒后可重发`;
+  if (emailCooldownActive.value) return `${cooldownSeconds.value} 秒后可重发`;
   return "重新发送验证码";
 });
 
-const userInitial = computed(() => (user.value?.username || "?").slice(0, 1).toUpperCase());
+const userInitial = computed(() => Array.from(user.value?.username || "?")[0].toUpperCase());
 
 setPageSeo({
   title: "账户设置",
@@ -329,21 +395,38 @@ setPageSeo({
   path: "/account/settings",
 });
 
-onMounted(loadUser);
+function warnBeforeUnload(event) {
+  if (!profileDirty.value) return;
+  event.preventDefault();
+  event.returnValue = "";
+}
+
+onMounted(() => {
+  loadUser();
+  window.addEventListener("beforeunload", warnBeforeUnload);
+  clockTimer = window.setInterval(() => { now.value = Date.now(); }, 1000);
+});
+onUnmounted(() => {
+  window.removeEventListener("beforeunload", warnBeforeUnload);
+  window.clearInterval(clockTimer);
+});
 
 async function loadUser() {
   isLoading.value = true;
+  loadError.value = "";
   try {
-    setUser(await refreshAuth());
+    const data = await getCurrentUser();
+    setUser(data.user || null);
     if (user.value) loadSessions();
   } catch (err) {
-    error.value = err.message || "读取用户失败。";
+    loadError.value = err.message || "账号资料读取失败，请重新加载。";
   } finally {
     isLoading.value = false;
   }
 }
 
 async function loadSessions() {
+  if (sessionsLoading.value) return;
   sessionsLoading.value = true;
   sessionsError.value = "";
   try {
@@ -357,6 +440,7 @@ async function loadSessions() {
 }
 
 async function handleRevokeSession(item) {
+  if (sessionBusy.value || sessionsLoading.value || item.current) return;
   sessionsMessage.value = "";
   sessionsError.value = "";
   revokingSessionId.value = item.id;
@@ -372,11 +456,13 @@ async function handleRevokeSession(item) {
 }
 
 function openRevokeOthers() {
+  if (sessionBusy.value || sessionsLoading.value || !sessions.value.some(item => !item.current)) return;
   revokeOthersDialog.error = "";
   revokeOthersDialog.open = true;
 }
 
 async function confirmRevokeOthers() {
+  if (sessionBusy.value) return;
   isRevokingOthers.value = true;
   revokeOthersDialog.error = "";
   try {
@@ -391,31 +477,84 @@ async function confirmRevokeOthers() {
   }
 }
 
-function setUser(nextUser) {
+function setUser(nextUser, preserveDraft = false) {
+  const oldUser = user.value;
+  const draft = { ...profileForm };
   user.value = nextUser;
-  profileForm.username = nextUser?.username || "";
-  profileForm.bio = nextUser?.bio || "";
+  profileForm.username = preserveDraft && oldUser && normalizeUsername(draft.username) !== oldUser.username
+    ? draft.username : nextUser?.username || "";
+  profileForm.bio = preserveDraft && oldUser && normalizeBio(draft.bio) !== (oldUser.bio || "")
+    ? draft.bio : nextUser?.bio || "";
+  if (oldUser?.avatarUrl !== nextUser?.avatarUrl) avatarFailed.value = false;
   setAuthUser(nextUser);
 }
 
-async function handleProfileSubmit() {
+function clearProfileMessages() {
   error.value = "";
   profileMessage.value = "";
-  profileForm.username = profileForm.username.normalize("NFKC").trim();
-  if (profileForm.bio.length > 280) {
-    error.value = "个人简介不能超过 280 个字符。";
-    return;
+  profileErrors.username = "";
+  profileErrors.bio = "";
+}
+
+function resetProfile() {
+  if (profileBusy.value) return;
+  profileForm.username = user.value?.username || "";
+  profileForm.bio = user.value?.bio || "";
+  clearProfileMessages();
+}
+
+function validateProfile() {
+  const username = normalizeUsername(profileForm.username);
+  if (username !== user.value?.username && !USERNAME_RE.test(username)) {
+    profileErrors.username = `用户名需为 ${USERNAME_HELP}`;
+    usernameInput.value?.focus();
+    return false;
   }
+  if (characterCount(normalizeBio(profileForm.bio)) > 280) {
+    profileErrors.bio = "个人简介不能超过 280 个字符。";
+    bioInput.value?.focus();
+    return false;
+  }
+  return true;
+}
+
+function handleProfileSubmit() {
+  if (profileBusy.value || !user.value?.emailVerified || !profileDirty.value) return;
+  clearProfileMessages();
+  if (!validateProfile()) return;
+  if (normalizeUsername(profileForm.username) !== user.value.username) {
+    if (usernameLocked.value) {
+      profileErrors.username = usernameChangeHelp.value;
+      return;
+    }
+    renameDialogOpen.value = true;
+  } else {
+    saveProfile();
+  }
+}
+
+async function saveProfile() {
+  if (profileBusy.value || !user.value?.emailVerified) return;
+  if (!validateProfile()) { renameDialogOpen.value = false; return; }
+  const payload = { bio: normalizeBio(profileForm.bio) };
+  const username = normalizeUsername(profileForm.username);
+  if (username !== user.value.username) payload.username = username;
+  renameDialogOpen.value = false;
   isSaving.value = true;
   try {
-    const data = await updateProfile({
-      username: profileForm.username,
-      bio: profileForm.bio,
-    });
+    const data = await updateProfile(payload);
     setUser(data.user);
     profileMessage.value = "资料已保存。";
   } catch (err) {
-    error.value = err.message || "资料保存失败。";
+    if (["invalid_username", "reserved_username", "username_exists", "username_change_cooldown"].includes(err.code)) {
+      profileErrors.username = err.message || "用户名暂不可用，请更换后重试。";
+      usernameInput.value?.focus();
+    } else if (err.code === "bio_too_long") {
+      profileErrors.bio = err.message;
+      bioInput.value?.focus();
+    } else {
+      error.value = err.message || "资料保存失败，请重试。输入内容已保留。";
+    }
   } finally {
     isSaving.value = false;
   }
@@ -425,12 +564,14 @@ async function handleAvatarChange(event) {
   const file = event.target.files?.[0];
   event.target.value = "";
   if (!file) return;
-  error.value = "";
-  profileMessage.value = "";
+  if (profileBusy.value || !user.value?.emailVerified) return;
+  clearProfileMessages();
+  const validationError = avatarValidationError(file);
+  if (validationError) { error.value = validationError; return; }
   isUploadingAvatar.value = true;
   try {
     const data = await uploadAvatar(file);
-    setUser(data.user);
+    setUser(data.user, true);
     profileMessage.value = "头像已更新。";
   } catch (err) {
     error.value = err.message || "头像上传失败。";
@@ -440,12 +581,21 @@ async function handleAvatarChange(event) {
 }
 
 async function handleLogout() {
-  error.value = "";
+  if (anyMutationBusy.value) return;
+  if (profileDirty.value && !window.confirm("资料修改尚未保存，确定放弃修改并退出登录吗？")) return;
+  logoutError.value = "";
+  isLoggingOut.value = true;
   try {
     await logoutUser();
     setUser(null);
+    passwordForm.current = passwordForm.next = passwordForm.confirm = "";
+    emailForm.currentPassword = emailForm.newEmail = emailForm.code = "";
+    sessions.value = [];
+    stopCooldown();
   } catch (err) {
-    error.value = err.message || "退出失败。";
+    logoutError.value = err.message || "退出失败，请重试。";
+  } finally {
+    isLoggingOut.value = false;
   }
 }
 
@@ -457,7 +607,12 @@ function clearPasswordMessages() {
 }
 
 async function handleChangePassword() {
+  if (securityBusy.value) return;
   clearPasswordMessages();
+  if (!passwordForm.current) {
+    passwordErrors.current = "请输入当前密码。";
+    return;
+  }
   if (passwordForm.next.length < 10) {
     passwordErrors.next = "新密码至少需要 10 位。";
     return;
@@ -476,6 +631,7 @@ async function handleChangePassword() {
     passwordForm.current = "";
     passwordForm.next = "";
     passwordForm.confirm = "";
+    await loadSessions();
   } catch (err) {
     if (err.code === "invalid_current_password") {
       passwordErrors.current = err.message || "当前密码不正确。";
@@ -500,7 +656,9 @@ function clearEmailMessages() {
 }
 
 function backToEmailForm() {
+  if (securityBusy.value) return;
   clearEmailMessages();
+  emailForm.code = "";
   emailStep.value = 1;
 }
 
@@ -513,6 +671,7 @@ function handleEmailSubmit() {
 }
 
 async function handleRequestEmailCode() {
+  if (securityBusy.value || emailCooldownActive.value) return;
   clearEmailMessages();
   if (!emailForm.currentPassword) {
     emailStep.value = 1;
@@ -524,12 +683,21 @@ async function handleRequestEmailCode() {
     emailErrors.email = "请输入正确的新邮箱地址。";
     return;
   }
+  if (emailForm.newEmail.toLowerCase() === user.value?.email.toLowerCase()) {
+    emailErrors.email = "新邮箱与当前绑定邮箱相同。";
+    return;
+  }
+  const targetEmail = emailForm.newEmail.trim().toLowerCase();
   isRequestingEmailCode.value = true;
   try {
     const data = await requestEmailChange({
       currentPassword: emailForm.currentPassword,
-      newEmail: emailForm.newEmail,
+      newEmail: targetEmail,
     });
+    emailForm.newEmail = targetEmail;
+    emailForm.code = "";
+    cooldownEmail.value = targetEmail;
+    emailCodeMinutes.value = Number(data.expiresMinutes) || 0;
     emailStep.value = 2;
     startCooldown(Number(data.cooldownSeconds) || 60);
     emailMessage.value = data.message || "验证码已发送，请查收新邮箱。";
@@ -541,8 +709,10 @@ async function handleRequestEmailCode() {
       emailStep.value = 1;
       emailErrors.email = err.message || "邮箱不可用。";
     } else if (err.code === "resend_cooldown") {
+      cooldownEmail.value = targetEmail;
+      emailForm.newEmail = targetEmail;
       emailStep.value = 2;
-      startCooldown(Number(err.details?.retryAfterSeconds || 60));
+      startCooldown(Number(err.retryAfterSeconds || err.details?.retryAfterSeconds || 60));
       emailError.value = "验证码发送过于频繁，请稍后重发；也可以直接输入之前收到的验证码。";
     } else {
       emailError.value = err.message || "验证码发送失败，请稍后再试。";
@@ -553,6 +723,7 @@ async function handleRequestEmailCode() {
 }
 
 async function handleConfirmEmail() {
+  if (securityBusy.value) return;
   clearEmailMessages();
   if (!CODE_RE.test(emailForm.code)) {
     emailErrors.code = "请输入 6 位数字验证码。";
@@ -564,12 +735,15 @@ async function handleConfirmEmail() {
       newEmail: emailForm.newEmail,
       code: emailForm.code,
     });
-    setUser(data.user);
+    setUser(data.user, true);
     emailMessage.value = data.message || "绑定邮箱已更新并完成验证。";
     emailForm.currentPassword = "";
     emailForm.newEmail = "";
     emailForm.code = "";
     emailStep.value = 1;
+    stopCooldown();
+    cooldownSeconds.value = 0;
+    cooldownEmail.value = "";
   } catch (err) {
     if (err.code === "invalid_code" || err.code === "expired_code") {
       emailErrors.code = err.message || "验证码不正确或已过期。";
@@ -594,11 +768,73 @@ function publicProfileHref(nextUser) {
 
 function formatTime(value) {
   if (!value) return "暂无";
-  return new Date(value).toLocaleString("zh-CN", { hour12: false });
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "暂无" : date.toLocaleString("zh-CN", { hour12: false, timeZone: "Asia/Shanghai" });
 }
 </script>
 
 <style scoped>
+.account-summary,
+.account-main,
+.account-card {
+  min-width: 0;
+}
+.account-summary h3,
+.account-summary p,
+.auth-notice p {
+  overflow-wrap: anywhere;
+}
+.account-card {
+  scroll-margin-top: 100px;
+}
+.settings-navigation {
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid rgba(23, 33, 29, 0.12);
+  padding-top: 14px;
+}
+.settings-navigation a {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--green);
+  font-weight: 750;
+  text-decoration: none;
+}
+.settings-navigation a:hover,
+.settings-navigation a:focus-visible {
+  background: rgba(31, 95, 70, 0.08);
+}
+.profile-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(23, 33, 29, 0.12);
+}
+.profile-save-actions .field-help,
+.panel-title-row .field-help {
+  margin: 0;
+}
+.account-card input,
+.account-card textarea {
+  min-width: 0;
+  width: 100%;
+}
+.account-card button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.account-card input:disabled,
+.account-card textarea:disabled,
+.account-card input[readonly] {
+  background: rgba(23, 33, 29, 0.04);
+}
+.account-card [aria-invalid="true"] {
+  border-color: var(--red);
+}
 .device-list {
   display: flex;
   flex-direction: column;
@@ -620,6 +856,7 @@ function formatTime(value) {
   margin: 4px 0 0;
   font-size: 0.85rem;
   color: var(--muted, #5d6b63);
+  overflow-wrap: anywhere;
 }
 .device-tag {
   display: inline-block;
@@ -634,5 +871,32 @@ function formatTime(value) {
 .device-tag.muted {
   background: rgba(23, 33, 29, 0.08);
   color: #5d6b63;
+}
+@media (max-width: 640px) {
+  .settings-navigation {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .settings-navigation a {
+    font-size: 0.85rem;
+  }
+  .profile-save-actions,
+  .profile-save-actions .inline-actions {
+    width: 100%;
+  }
+  .profile-save-actions button {
+    flex: 1;
+    justify-content: center;
+  }
+  .device-row {
+    flex-wrap: wrap;
+  }
+  .device-row > div {
+    min-width: 0;
+  }
+  .user-info-grid {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 10px;
+  }
 }
 </style>

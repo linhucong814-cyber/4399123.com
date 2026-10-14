@@ -22,11 +22,6 @@ export const navigationItems = [
     primary: true,
   },
   {
-    label: "文档",
-    href: "/docs",
-    primary: true,
-  },
-  {
     label: "Agent 提示词模板生成器",
     href: "/vibe-coding/agent-prompt-template/",
   },

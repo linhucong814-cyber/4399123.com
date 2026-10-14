@@ -25,10 +25,12 @@
     <div class="minimal-home__actions">
       <a class="minimal-home__cta minimal-home__cta--primary" href="/vibe-coding">浏览作品</a>
       <a class="minimal-home__cta" href="/community">进入社区</a>
-      <a class="minimal-home__cta" href="/docs">了解 4399123</a>
+      <a class="minimal-home__cta" href="#about">了解 4399123</a>
     </div>
 
   </section>
+
+  <AboutContent embedded />
 
   <section class="home-latest" aria-label="最新内容">
     <div class="home-latest__col">
@@ -66,36 +68,26 @@
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, ref } from "vue";
+import AboutContent from "./AboutContent.vue";
 import { projectItems, thoughtPosts } from "../data/content";
-import {
-  activeTheme,
-  cycleTheme,
-} from "./homeThemeState";
+import { mintTheme } from "./homeThemeState";
 
 const digits = "4399123".split("");
 const pointerStyle = ref({ "--home-x": "0px", "--home-y": "0px" });
 const homeStyle = computed(() => ({
   ...pointerStyle.value,
-  "--home-bg-image": `url("${activeTheme.value.image}")`,
-  "--home-bg-overlay": activeTheme.value.overlay,
-  "--home-ink": activeTheme.value.ink,
-  "--home-muted": activeTheme.value.muted,
-  "--home-accent": activeTheme.value.accent,
-  "--home-cta-bg": activeTheme.value.ctaBg,
-  "--home-cta-fg": activeTheme.value.ctaFg,
+  "--home-bg-image": `url("${mintTheme.image}")`,
+  "--home-bg-overlay": mintTheme.overlay,
+  "--home-ink": mintTheme.ink,
+  "--home-muted": mintTheme.muted,
+  "--home-accent": mintTheme.accent,
+  "--home-cta-bg": mintTheme.ctaBg,
+  "--home-cta-fg": mintTheme.ctaFg,
 }));
 
 const latestProjects = projectItems.slice(0, 3);
 const latestPosts = thoughtPosts.slice(0, 3);
-
-onMounted(() => window.addEventListener("keydown", handleThemeKeydown));
-onUnmounted(() => window.removeEventListener("keydown", handleThemeKeydown));
-
-function handleThemeKeydown(event) {
-  if (event.key === "ArrowRight") cycleTheme(1);
-  if (event.key === "ArrowLeft") cycleTheme(-1);
-}
 
 function projectHref(project) {
   return project.href || `/blog/${encodeURIComponent(project.slug)}`;

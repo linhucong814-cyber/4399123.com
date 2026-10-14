@@ -70,8 +70,9 @@
 
         <label class="field-label">
           用户名
-          <input v-model.trim="form.username" autocomplete="username" required minlength="3" maxlength="32" />
+          <input v-model="form.username" autocomplete="username" autocapitalize="none" spellcheck="false" required minlength="1" aria-describedby="register-username-help" />
         </label>
+        <p id="register-username-help" class="field-help">{{ USERNAME_HELP }}</p>
         <p v-if="fieldErrors.username" class="form-message error-state">{{ fieldErrors.username }}</p>
 
         <label class="field-label">
@@ -105,8 +106,8 @@ import { computed, reactive, ref, watchEffect } from "vue";
 import { loginUser, registerUser, sendRegisterCode } from "../../services/auth";
 import { useCooldown } from "../../utils/useCooldown";
 import { setPageSeo } from "../../utils/seo";
+import { USERNAME_HELP, USERNAME_RE, normalizeUsername } from "../../utils/accountProfile";
 
-const USERNAME_RE = /^[\p{L}\p{N}_.-]{3,32}$/u;
 const CODE_RE = /^\d{6}$/;
 
 const props = defineProps({
@@ -247,13 +248,13 @@ async function submit() {
   }
 
   if (isRegister.value) {
-    form.username = form.username.normalize("NFKC").trim();
+    form.username = normalizeUsername(form.username);
     if (!CODE_RE.test(form.code)) {
       fieldErrors.code = "请输入 6 位数字验证码。";
       return;
     }
     if (!USERNAME_RE.test(form.username)) {
-      fieldErrors.username = "用户名需为 3-32 位字母、数字（支持中文）、下划线、点或短横线。";
+      fieldErrors.username = `用户名需为 ${USERNAME_HELP}`;
       return;
     }
     if (form.password !== form.confirmPassword) {

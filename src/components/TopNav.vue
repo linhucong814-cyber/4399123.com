@@ -9,10 +9,14 @@
     aria-label="主导航"
   >
     <div class="site-nav-shell">
-      <a class="site-nav-brand site-nav-wordmark" href="/" aria-label="4399123 首页">4399123</a>
+      <a class="site-nav-brand site-nav-wordmark" href="/" aria-label="4399123 首页">
+        <img class="site-nav-brand-logo" src="/assets/brand/4399123-domain-logo-transparent.png" alt="" width="40" height="40" />
+        <span>4399123.com</span>
+      </a>
 
       <div class="site-nav-desktop">
         <div class="site-nav-primary" aria-label="主要入口">
+          <a class="site-nav-link" :class="{ 'site-nav-link--active': isHomeRoute }" href="/" :aria-current="isHomeRoute ? 'page' : undefined">首页</a>
           <a
             v-for="item in primaryItems"
             :key="item.href"
@@ -212,7 +216,6 @@
         </button>
       </div>
 
-      <HomeThemePicker v-if="isHomeRoute" />
     </div>
   </nav>
 
@@ -360,7 +363,6 @@ import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { authState, refreshAuth } from "../services/authState";
 import { getCommunityNotifications } from "../services/community";
 import SystemAnnouncementMenu from "./SystemAnnouncementMenu.vue";
-import HomeThemePicker from "./HomeThemePicker.vue";
 
 const props = defineProps({
   items: {

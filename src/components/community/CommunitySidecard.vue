@@ -13,21 +13,6 @@
         <time :datetime="signal.createdAt">{{ formatTime(signal.createdAt) }}</time>
       </a>
     </div>
-    <div v-if="socialSummary.activeTopics.length" class="sidecard-panel">
-      <p class="eyebrow">Topics</p>
-      <h2>热门话题</h2>
-      <div class="topic-chip-list">
-        <a
-          v-for="topic in socialSummary.activeTopics"
-          :key="topic.id"
-          class="topic-chip"
-          :href="topic.href"
-        >
-          <strong>{{ topic.label }}</strong>
-          <span>{{ topic.postCount }} 内容 · {{ topic.replyCount }} 讨论</span>
-        </a>
-      </div>
-    </div>
     <div v-if="socialSummary.recommendedUsers.length" class="sidecard-panel">
       <p class="eyebrow">People</p>
       <h2>推荐用户</h2>
@@ -51,7 +36,7 @@
       <h2>适合发布什么</h2>
       <ul>
         <li>展示一个刚做完的 Vibe Coding 作品，请别人看可用性和表达。</li>
-        <li>在“分享发现”里整理文章、资料线索、行业观察和经验复盘。</li>
+        <li>分享文章、资料线索、行业观察和经验复盘。</li>
         <li>记录一次 AI 工具链、提示词或自动化流程的真实踩坑。</li>
         <li>提出希望 4399123 增加或改进的功能，并说明使用场景。</li>
       </ul>
@@ -64,7 +49,7 @@
     <div class="sidecard-panel">
       <p class="eyebrow">First Move</p>
       <h2>新用户下一步</h2>
-      <p>先选一个栏目浏览；如果当前没有内容，可以用左侧“发帖”发起第一条讨论。</p>
+      <p>在主页浏览全部社区内容，也可以用“发帖”分享想法或发起讨论。</p>
     </div>
   </aside>
 </template>

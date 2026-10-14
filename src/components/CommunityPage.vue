@@ -3,6 +3,7 @@
     <div class="community-stream-shell" :aria-hidden="selectedPost ? 'true' : null" :inert="Boolean(selectedPost)">
       <CommunityRail
         :composer-label="composerRailLabel"
+        :composer-expanded="isComposerExpanded"
         :is-logged-in="Boolean(user)"
         :login-href="loginHref()"
         @focus-composer="focusComposer"
@@ -24,18 +25,13 @@
         </header>
 
         <CommunityFilterTabs
-          :feed="selectedFeed"
-          :channels="channels"
-          :channel="selectedChannel"
           :sort-options="sortOptions"
           :sort="selectedSort"
-          @select-feed="selectFeed"
-          @select-channel="selectChannel"
           @select-sort="selectSort"
         />
 
         <InboxPanel
-          v-if="user"
+          v-if="user && isInboxOpen"
           :is-open="isInboxOpen"
           :unread-count="unreadNotifications"
           :notifications="notifications"
@@ -46,8 +42,25 @@
           @open-notification="openNotification"
         />
 
+        <div v-if="user" class="community-compose-entry">
+          <button
+            ref="composerToggle"
+            class="secondary-link small-action"
+            type="button"
+            :aria-expanded="isComposerExpanded"
+            aria-controls="community-post-composer"
+            :disabled="isSubmitting"
+            @click="toggleComposer"
+          >
+            {{ isComposerExpanded ? "收起发布帖子" : "发布帖子" }}
+          </button>
+          <p v-if="success && !isComposerExpanded" class="form-message" role="status">{{ success }}</p>
+        </div>
+
         <form
           v-if="user"
+          v-show="isComposerExpanded"
+          id="community-post-composer"
           ref="composerForm"
           class="composer-panel stream-composer"
           :class="{ 'drag-over': isComposerDragOver, expanded: isComposerExpanded }"
@@ -90,17 +103,6 @@
             </label>
           </div>
 
-          <div v-if="isComposerExpanded" class="composer-grid">
-            <label class="field-label">
-              栏目
-              <select v-model="form.channel">
-                <option v-for="channel in channels" :key="channel.id" :value="channel.id">
-                  {{ channel.label }}
-                </option>
-              </select>
-            </label>
-          </div>
-
           <div v-if="isComposerExpanded || attachmentFiles.length" class="attachment-uploader">
             <label class="attachment-trigger">
               <span>添加附件</span>
@@ -121,8 +123,15 @@
             <p v-if="error" class="form-message error-state">{{ error }}</p>
             <p v-else-if="success" class="form-message">{{ success }}</p>
             <div class="inline-actions">
-              <button class="secondary-link small-action" type="button" @click="isComposerExpanded = !isComposerExpanded">
-                {{ isComposerExpanded ? "收起" : "更多" }}
+              <button
+                class="secondary-link small-action"
+                type="button"
+                :aria-expanded="isComposerExpanded"
+                aria-controls="community-post-composer"
+                :disabled="isSubmitting"
+                @click="toggleComposer"
+              >
+                收起
               </button>
               <button class="secondary-link small-action" type="button" :disabled="isSubmitting" @click="saveDraft">
                 存草稿
@@ -164,7 +173,6 @@
             :key="post.id"
             :post="post"
             :index="index"
-            :topic-href="post.topic?.href || communityListUrl(post.channel)"
             :share-status-post-id="shareStatusPostId"
             :like-busy-post-id="likeBusyPostId"
             :bookmark-busy-post-id="bookmarkBusyPostId"
@@ -211,7 +219,7 @@
           <div class="detail-topbar">
             <button class="text-action back-action" type="button" @click="closePost">返回</button>
             <div class="detail-nav-title">
-              <strong>{{ selectedPost.channelLabel }}</strong>
+              <strong>主页</strong>
               <span>{{ detailTypeLabel(selectedPost) }}</span>
             </div>
             <div class="detail-nav-tags" aria-label="帖子标签">
@@ -230,14 +238,6 @@
 
           <form v-if="editingPostId === selectedPost.id" class="edit-panel" @submit.prevent="submitEdit(selectedPost)">
             <div class="composer-grid">
-              <label class="field-label">
-                栏目
-                <select v-model="editForm.channel">
-                  <option v-for="channel in channels" :key="channel.id" :value="channel.id">
-                    {{ channel.label }}
-                  </option>
-                </select>
-              </label>
               <label class="field-label">
                 标题
                 <input v-model.trim="editForm.title" maxlength="120" />
@@ -268,7 +268,6 @@
               <div class="detail-original-body">
                 <div class="stream-post-meta">
                   <a class="author-name-link" :href="userProfileUrl(selectedPost.author)">@{{ selectedPost.author.username }}</a>
-                  <a class="topic-inline-link" :href="selectedPost.topic?.href || communityListUrl(selectedPost.channel)">{{ selectedPost.topic?.label || selectedPost.channelLabel }}</a>
                   <span class="forum-badge badge-owner">楼主</span>
                   <span v-for="badge in selectedPost.badges || []" :key="`detail-${badge.key}`" class="forum-badge" :class="`badge-${badge.key}`">{{ badge.label }}</span>
                   <span v-if="selectedPost.isDraft" class="draft-badge">草稿</span>
@@ -787,6 +786,7 @@ import {
   updateCommunityReply,
 } from "../services/community";
 import { setPageSeo } from "../utils/seo";
+import { communityHomeUrl, normalizeCommunityHomeUrl } from "./community/communityHomeRoute";
 
 const props = defineProps({
   postId: {
@@ -796,23 +796,9 @@ const props = defineProps({
 });
 
 const SHARE_DISCOVERY_CHANNEL = "share-discovery";
-const fallbackChannels = [
-  { id: "meta", label: "站务", description: "账号、公告、社区规则和站点建设讨论。" },
-  { id: "vibe-coding", label: "Vibe Coding", description: "快速成型、AI 辅助开发、实验项目复盘。" },
-  { id: "ai-tools", label: "AI 工具", description: "模型、提示词、工作流和工具链经验。" },
-  { id: SHARE_DISCOVERY_CHANNEL, label: "分享发现", description: "发布文章、行业发现、经验复盘和有价值的资料线索。" },
-  { id: "image-prompts", label: "image提示词", description: "分享图像生成提示词、风格参数、案例和复用模板。" },
-  { id: "showcase", label: "作品展示", description: "展示你做出的网页、小游戏、图片和原型。" },
-  { id: "requests", label: "需求与反馈", description: "提出想要的工具、改进建议和协作需求。" },
-  { id: "lounge", label: "闲聊", description: "轻松话题、灵感碎片和日常交流。" },
-];
-
-const channels = ref([...fallbackChannels]);
 const posts = ref([]);
 const user = ref(null);
-const selectedChannel = ref("all");
 const selectedSort = ref("latest");
-const selectedFeed = ref("recommended");
 const isLoading = ref(true);
 const isLoadingMore = ref(false);
 const isPostDetailLoading = ref(false);
@@ -851,6 +837,7 @@ const bookmarkBusyPostId = ref(null);
 const followBusyUserId = ref(null);
 const replyActionBusyId = ref(null);
 const composerForm = ref(null);
+const composerToggle = ref(null);
 const replyTextarea = ref(null);
 const topicModal = ref(null);
 const imagePreviewModal = ref(null);
@@ -922,11 +909,7 @@ let postOpener = null;
 let imagePreviewOpener = null;
 const selectedPost = computed(() => posts.value.find((post) => post.id === selectedPostId.value) || null);
 const isStandalonePost = computed(() => Boolean(props.postId));
-const isShareDiscoverySelected = computed(() => selectedChannel.value === SHARE_DISCOVERY_CHANNEL || form.channel === SHARE_DISCOVERY_CHANNEL);
-const selectedChannelLabel = computed(() => {
-  if (selectedChannel.value === "all") return "全部";
-  return channels.value.find((channel) => channel.id === selectedChannel.value)?.label || "当前栏目";
-});
+const isShareDiscoverySelected = computed(() => form.channel === SHARE_DISCOVERY_CHANNEL);
 const composerRailLabel = computed(() => (isShareDiscoverySelected.value ? "写分享" : "发帖"));
 const composerHeading = computed(() => (isShareDiscoverySelected.value ? "写一篇分享发现" : "发布新帖子"));
 const composerTitlePlaceholder = computed(() => (isShareDiscoverySelected.value ? "写一个适合分享传播的标题" : "写一个清楚的标题"));
@@ -942,33 +925,15 @@ const submitButtonLabel = computed(() => {
   if (isSubmitting.value) return "保存中...";
   return isShareDiscoverySelected.value ? "发布分享" : "发布帖子";
 });
-const loginPanelTitle = computed(() => (selectedChannel.value === SHARE_DISCOVERY_CHANNEL ? "登录后发布分享" : "登录后参与讨论"));
-const loginPanelBody = computed(() =>
-  selectedChannel.value === SHARE_DISCOVERY_CHANNEL
-    ? "公开分享可以直接浏览；登录后可以发布文章、发现、经验复盘并接收互动通知。"
-    : "公开内容可以直接浏览；登录后可以发布作品、提出需求、回复他人并接收互动通知。",
-);
-const emptyStateEyebrow = computed(() => (selectedChannel.value === SHARE_DISCOVERY_CHANNEL ? "Share Discovery" : "No Posts"));
-const emptyStateTitle = computed(() =>
-  selectedChannel.value === SHARE_DISCOVERY_CHANNEL ? "还没有分享发现" : `${selectedChannelLabel.value}还没有内容`,
-);
-const emptyStateBody = computed(() =>
-  selectedChannel.value === SHARE_DISCOVERY_CHANNEL
-    ? "这里会展示文章、行业发现、经验分享和资料线索。第一篇可以从一个有用链接、一段复盘或一次工具实践开始。"
-    : "当前栏目暂时没有帖子。可以发起一个清楚的问题、作品展示或反馈，让后续讨论有上下文。",
-);
-const emptyPrompts = computed(() =>
-  selectedChannel.value === SHARE_DISCOVERY_CHANNEL
-    ? [
-        { kicker: "Article", title: "整理一篇文章", body: "写下标题、核心摘要、来源和你认为值得看的原因。" },
-        { kicker: "Finding", title: "记录一个发现", body: "可以是工具、资料、产品变化、行业信号或使用技巧。" },
-        { kicker: "Experience", title: "复盘一次经验", body: "说明背景、做法、结果和下次可以复用的判断。" },
-      ]
-    : [
-        { kicker: "Question", title: "提出一个问题", body: "把背景、尝试过的方法和期望结果写清楚。" },
-        { kicker: "Showcase", title: "展示一个作品", body: "附上截图、链接和你希望得到的反馈。" },
-      ],
-);
+const loginPanelTitle = "登录后参与讨论";
+const loginPanelBody = "公开内容可以直接浏览；登录后可以发布作品、提出需求、回复他人并接收互动通知。";
+const emptyStateEyebrow = "No Posts";
+const emptyStateTitle = "主页还没有内容";
+const emptyStateBody = "社区暂时没有帖子。可以发起一个清楚的问题、作品展示或反馈，让后续讨论有上下文。";
+const emptyPrompts = [
+  { kicker: "Question", title: "提出一个问题", body: "把背景、尝试过的方法和期望结果写清楚。" },
+  { kicker: "Showcase", title: "展示一个作品", body: "附上截图、链接和你希望得到的反馈。" },
+];
 const visibleReplies = computed(() => {
   const post = selectedPost.value;
   if (!post) return [];
@@ -1015,22 +980,15 @@ setPageSeo({
 });
 
 function syncRouteStateFromLocation() {
+  const normalizedUrl = normalizeCommunityHomeUrl(window.location.href);
+  const currentUrl = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+  if (normalizedUrl !== currentUrl) {
+    window.history.replaceState(window.history.state, "", normalizedUrl);
+  }
   const searchParams = new URLSearchParams(window.location.search);
-  const routeChannel = searchParams.get("channel") || "all";
-  const nextChannel = routeChannel === "all" || fallbackChannels.some((channel) => channel.id === routeChannel)
-    ? routeChannel
-    : "all";
-  const routeSort = searchParams.get("sort") || "latest";
-  const nextSort = sortOptions.some((option) => option.id === routeSort) ? routeSort : "latest";
-  const routeFeed = searchParams.get("feed") || "recommended";
-  const nextFeed = ["recommended", "following"].includes(routeFeed) ? routeFeed : "recommended";
-  const changed =
-    selectedChannel.value !== nextChannel ||
-    selectedSort.value !== nextSort ||
-    selectedFeed.value !== nextFeed;
-  selectedChannel.value = nextChannel;
+  const nextSort = searchParams.get("sort") || "latest";
+  const changed = selectedSort.value !== nextSort;
   selectedSort.value = nextSort;
-  selectedFeed.value = nextFeed;
   isInboxOpen.value = searchParams.get("inbox") === "1";
   return changed;
 }
@@ -1131,9 +1089,9 @@ async function loadPosts({ append = false } = {}) {
   loadError.value = "";
   try {
     const data = await getCommunityPosts(
-      selectedChannel.value,
+      "all",
       selectedSort.value,
-      selectedFeed.value,
+      "recommended",
       {
         cursor: append ? pageInfo.nextCursor : null,
         limit: pageInfo.pageSize,
@@ -1141,7 +1099,6 @@ async function loadPosts({ append = false } = {}) {
       },
     );
     if (requestId !== postsRequestId) return;
-    channels.value = Array.isArray(data.channels) && data.channels.length ? data.channels : fallbackChannels;
     const incomingPosts = Array.isArray(data.posts) ? data.posts : [];
     if (append) {
       const existingIds = new Set(posts.value.map((post) => post.id));
@@ -1197,7 +1154,6 @@ async function loadPostDetail(postId, { standalone = isStandalonePost.value } = 
   else postActionError.value = "";
   try {
     const data = await getCommunityPost(postId, { signal: postDetailRequestController.signal });
-    channels.value = Array.isArray(data.channels) && data.channels.length ? data.channels : fallbackChannels;
     if (Object.prototype.hasOwnProperty.call(data, "user")) user.value = data.user;
     unreadNotifications.value = Number(data.unreadNotifications ?? 0);
     if (data.post) {
@@ -1230,52 +1186,17 @@ async function loadPostDetail(postId, { standalone = isStandalonePost.value } = 
   }
 }
 
-function selectChannel(channel) {
-  if (isStandalonePost.value) {
-    window.location.href = communityListUrl(channel, selectedSort.value);
-    return;
-  }
-  selectedChannel.value = channel;
-  if (channel !== "all") form.channel = channel;
-  closePostState();
-  window.history.pushState({}, "", communityListUrl(channel, selectedSort.value));
-  notifyRouteChange();
-  loadPosts();
-}
-
 function selectSort(sort) {
   if (!sortOptions.some((option) => option.id === sort)) return;
   if (isStandalonePost.value) {
-    window.location.href = communityListUrl(selectedChannel.value, sort);
+    window.location.href = communityHomeUrl(sort);
     return;
   }
   selectedSort.value = sort;
   closePostState();
-  window.history.pushState({}, "", communityListUrl(selectedChannel.value, sort));
+  window.history.pushState({}, "", communityHomeUrl(sort));
   notifyRouteChange();
   loadPosts();
-}
-
-function selectFeed(feed) {
-  if (!["recommended", "following"].includes(feed)) return;
-  if (isStandalonePost.value) {
-    window.location.href = communityListUrl(selectedChannel.value, selectedSort.value, feed);
-    return;
-  }
-  selectedFeed.value = feed;
-  closePostState();
-  window.history.pushState({}, "", communityListUrl(selectedChannel.value, selectedSort.value, feed));
-  notifyRouteChange();
-  loadPosts();
-}
-
-function communityListUrl(channel = selectedChannel.value, sort = selectedSort.value, feed = selectedFeed.value) {
-  const params = new URLSearchParams();
-  if (channel && channel !== "all") params.set("channel", channel);
-  if (sort && sort !== "latest") params.set("sort", sort);
-  if (feed && feed !== "recommended") params.set("feed", feed);
-  const query = params.toString();
-  return query ? `/community?${query}` : "/community";
 }
 
 function openPost(post, options = {}) {
@@ -1418,14 +1339,8 @@ function focusReplyBox() {
 }
 
 function usePrompt(prompt) {
-  if (selectedChannel.value !== "all") {
-    form.channel = selectedChannel.value;
-  }
   if (!user.value) {
-    loginPrompt.value =
-      selectedChannel.value === SHARE_DISCOVERY_CHANNEL
-        ? "登录后可以发布分享发现。"
-        : "登录后可以发布新帖子。";
+    loginPrompt.value = "登录后可以发布新帖子。";
     return;
   }
   if (!form.title) form.title = prompt.title;
@@ -1536,6 +1451,8 @@ async function saveDraft() {
 }
 
 async function savePost(status) {
+  if (isSubmitting.value) return;
+  isComposerExpanded.value = true;
   error.value = "";
   success.value = "";
   const normalizedBody = form.body.trim();
@@ -1567,12 +1484,11 @@ async function savePost(status) {
   try {
     const payload = buildPostPayload(payloadSource, status, attachmentFiles.value);
     const data = await createCommunityPost(payload);
-    selectedChannel.value = data.post.channel || form.channel;
-    window.history.pushState({}, "", communityListUrl(selectedChannel.value, selectedSort.value));
+    window.history.pushState({}, "", communityHomeUrl(selectedSort.value));
     notifyRouteChange();
     posts.value = [
       data.post,
-      ...posts.value.filter((post) => post.id !== data.post.id && post.channel === selectedChannel.value),
+      ...posts.value.filter((post) => post.id !== data.post.id),
     ];
     openPost(data.post);
     form.title = "";
@@ -2606,6 +2522,18 @@ async function removeReply(reply) {
   }
 }
 
+function toggleComposer() {
+  if (isSubmitting.value) return;
+  if (!isComposerExpanded.value) {
+    focusComposer();
+    return;
+  }
+  isComposerExpanded.value = false;
+  isComposerDragOver.value = false;
+  composerDragDepth = 0;
+  nextTick(() => composerToggle.value?.focus?.({ preventScroll: true }));
+}
+
 function focusComposer() {
   if (!user.value) {
     loginPrompt.value = isShareDiscoverySelected.value ? "登录后可以发布分享发现。" : "登录后可以发布新帖子。";
@@ -2630,6 +2558,10 @@ async function loadNotifications() {
 
 async function toggleInbox() {
   isInboxOpen.value = !isInboxOpen.value;
+  const url = new URL(window.location.href);
+  if (isInboxOpen.value) url.searchParams.set("inbox", "1");
+  else url.searchParams.delete("inbox");
+  window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   if (isInboxOpen.value) await loadNotifications();
 }
 
@@ -2681,3 +2613,15 @@ const CommunityPostStatus = {
   PUBLISHED: "published",
 };
 </script>
+
+<style scoped>
+.community-compose-entry {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.community-compose-entry .form-message {
+  margin: 0;
+}
+</style>

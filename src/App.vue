@@ -49,6 +49,9 @@
         </div>
       </section>
     </main>
+    <footer v-if="isHomeRoute" class="home-footer">
+      <small>Copyright © 2026 4399123.com</small>
+    </footer>
   </div>
 </template>
 

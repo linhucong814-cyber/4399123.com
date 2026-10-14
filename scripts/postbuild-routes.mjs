@@ -1,5 +1,6 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { aboutContent } from "../src/data/about.mjs";
 import { absoluteUrl, contentUrl, escapeHtml, readContent, siteDescription, siteUrl } from "./content-utils.mjs";
 
 const root = process.cwd();
@@ -8,8 +9,8 @@ const indexPath = path.join(distDir, "index.html");
 const indexHtml = await fs.readFile(indexPath, "utf8");
 const items = await readContent(root);
 
-function metaHtml({ title, description, url, image, type = "website", jsonLd }) {
-  const fullTitle = title === "4399123" ? title : `${title} | 4399123`;
+function metaHtml({ title, description, url, image, type = "website", jsonLd, includeSiteName = true }) {
+  const fullTitle = title === "4399123" || !includeSiteName ? title : `${title} | 4399123`;
   const canonical = absoluteUrl(url);
   const socialImage = absoluteUrl(image || "/assets/brand/4399123-og.png");
   return [
@@ -68,6 +69,31 @@ function appShellHtml(itemsForPage) {
   ].join("\n");
 }
 
+function aboutShellHtml({ embedded = false } = {}) {
+  const titleTag = embedded ? "h2" : "h1";
+  const sectionTag = embedded ? "h3" : "h2";
+  return [
+    `<section${embedded ? ' id="about"' : ''} aria-labelledby="docs-title">`,
+    `<${titleTag} id="docs-title">为了创造想法而生</${titleTag}>`,
+    `<p>${escapeHtml(aboutContent.lede)}</p>`,
+    '<p>Idea 提出想法 → Build 做成作品 → Share 分享迭代</p>',
+    '<p>Natural language in. An experience out.</p>',
+    '<nav aria-label="关于 4399123 的目录">',
+    ...aboutContent.sections.map((section) => `<a href="#${section.id}">${escapeHtml(section.label)}</a>`),
+    '</nav>',
+    ...aboutContent.sections.map((section) => [
+      `<section id="${section.id}">`,
+      `<${sectionTag}>${escapeHtml(section.title)}</${sectionTag}>`,
+      `<p>${escapeHtml(section.body)}</p>`,
+      section.id === "creators" ? `<ul>${aboutContent.roles.map((role) => `<li>${escapeHtml(role)}</li>`).join("")}</ul>` : "",
+      section.id === "belief" ? '<a href="/vibe-coding/share">分享你的作品</a>' : "",
+      '</section>',
+    ].join("\n")),
+    '<nav><a href="/vibe-coding">浏览作品</a> <a href="/community">进入社区</a></nav>',
+    '</section>',
+  ].join("\n");
+}
+
 function homeShellHtml(latestItems = []) {
   return [
     '<div id="app">',
@@ -79,13 +105,15 @@ function homeShellHtml(latestItems = []) {
     '      <a href="/vibe-coding">浏览作品</a>',
     '      <a href="/community">进入社区</a>',
     '      <a href="/blog">阅读博客</a>',
-    '      <a href="/docs">了解 4399123</a>',
+    '      <a href="#about">了解 4399123</a>',
     "    </nav>",
+    aboutShellHtml({ embedded: true }),
     ...latestItems.map(
       (item) =>
         `    <article><h2><a href="${escapeHtml(contentUrl(item))}">${escapeHtml(item.title)}</a></h2><p>${escapeHtml(item.summary)}</p></article>`,
     ),
     "  </main>",
+    '  <footer class="home-footer"><small>Copyright © 2026 4399123.com</small></footer>',
     "</div>",
   ].join("\n");
 }
@@ -129,7 +157,8 @@ function simpleStaticPage({ route, title, description, heading, body, links = []
 }
 
 const homeMeta = metaHtml({
-  title: "4399123",
+  title: "4399123 为创造想法而生的 Vibe Coding 社区",
+  includeSiteName: false,
   description: siteDescription,
   url: "/",
   type: "website",
@@ -270,23 +299,7 @@ await writeRoute(
         },
       }),
     ),
-    [
-      '<div id="app">',
-      '  <article class="seo-static">',
-      "    <h1>为了创造想法而生</h1>",
-      "    <p>4399123 是一个为「创造想法」而生的 Vibecoding 社区与 AI 创作工作台。</p>",
-      "    <h2>不止是 prompt-to-output</h2>",
-      "    <p>它不只是一个简单的 prompt-to-output 工具，而是一个从 idea-to-build-to-share 的创造空间：你可以用自然语言描述一个想法，借助 AI Agent、Vibe Coding、产品策略、原型设计、代码生成与运行，把脑海里模糊的灵感一步步变成可以体验、可以迭代、可以交付的作品。</p>",
-      "    <h2>让人人都可以实现自己的想法</h2>",
-      "    <p>4399123.com 的初衷很简单：为了创造想法而做，让人人都可以实现自己的想法。</p>",
-      "    <h2>创造者，可以是任何人</h2>",
-      "    <p>无论你是产品经理、设计师、创业者、开发者，还是只是一个有灵感、有表达欲、有创造冲动的普通人，都可以在这里跳过复杂的工具链和技术门槛，专注于真正重要的事：把想法创造出来。</p>",
-      "    <h2>从「我有一个想法」到「我把它实现了」</h2>",
-      "    <p>我们相信，未来的创造不只属于少数会写代码、会设计、会运营的人，而属于每一个愿意提出想法、验证想法、推动想法的人。4399123 希望成为这样的起点：让「我有一个想法」最终变成「我把它实现了」。</p>",
-      '    <nav><a href="/vibe-coding">浏览作品</a> <a href="/community">进入社区</a></nav>',
-      "  </article>",
-      "</div>",
-    ].join("\n"),
+    `<div id="app"><main class="seo-static">${aboutShellHtml()}</main></div>`,
   ),
 );
 

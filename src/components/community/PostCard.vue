@@ -8,7 +8,6 @@
     <div class="pc-body">
       <span class="pc-meta">
         <a class="pc-user" :href="userProfileUrl(post.author)" @click.stop>@{{ post.author.username }}</a>
-        <a class="pc-channel" :href="topicHref" @click.stop>{{ post.topic?.label || post.channelLabel }}</a>
         <span v-for="badge in post.badges || []" :key="`${post.id}-${badge.key}`" class="forum-badge" :class="`badge-${badge.key}`">{{ badge.label }}</span>
         <span v-if="post.isDraft" class="draft-badge">草稿</span>
         <time class="pc-time" :datetime="post.createdAt">{{ formatTime(post.createdAt) }}</time>
@@ -18,9 +17,8 @@
         type="button"
         @click="$emit('open', post)"
       >
-        <span v-if="isSharePost(post)" class="share-cover" :class="{ empty: !coverImage(post) }">
-          <img v-if="coverImage(post)" :src="coverImage(post).url" :alt="coverImage(post).name" loading="lazy" />
-          <span v-else>分享发现</span>
+        <span v-if="isSharePost(post) && coverImage(post)" class="share-cover">
+          <img :src="coverImage(post).url" :alt="coverImage(post).name" loading="lazy" />
         </span>
         <span v-if="shouldShowTitle(post)" class="pc-title">{{ post.title }}</span>
         <span class="pc-excerpt">{{ excerpt(post.body) }}</span>
@@ -109,10 +107,6 @@ defineProps({
     type: Number,
     default: 0,
   },
-  topicHref: {
-    type: String,
-    default: "/community",
-  },
   shareStatusPostId: {
     type: [Number, String],
     default: null,
@@ -182,15 +176,6 @@ defineEmits(["open", "share", "like", "bookmark", "follow"]);
   color: var(--c-green);
 }
 
-.pc-channel {
-  color: var(--c-green);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.pc-channel:hover {
-  text-decoration: underline;
-}
 
 .pc-time {
   margin-left: auto;

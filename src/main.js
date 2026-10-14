@@ -3,6 +3,12 @@ import App from "./App.vue";
 import "./styles.css";
 import "./runway.css";
 import "./minimal-home.css";
+import "./navigation.css";
+import navigationTokens from "./data/navigation-tokens.json";
+
+for (const [name, value] of Object.entries(navigationTokens)) {
+  document.documentElement.style.setProperty(`--site-bar-${name}`, value);
+}
 
 const app = createApp(App);
 

@@ -1,15 +1,15 @@
 <template>
-  <div v-if="open" class="admin-modal-backdrop" @click.self="$emit('cancel')">
-    <div class="admin-modal" role="dialog" aria-modal="true">
-      <h3>{{ title }}</h3>
-      <p v-if="message" class="admin-modal-message">{{ message }}</p>
+  <div v-if="open" class="admin-modal-backdrop" @click.self="cancel" @keydown="handleKeydown">
+    <div ref="modal" class="admin-modal" role="dialog" aria-modal="true" :aria-labelledby="`${dialogId}-title`" :aria-describedby="message ? `${dialogId}-message` : undefined" tabindex="-1">
+      <h3 :id="`${dialogId}-title`">{{ title }}</h3>
+      <p v-if="message" :id="`${dialogId}-message`" class="admin-modal-message">{{ message }}</p>
       <label v-if="withReason" class="field-label">
         {{ reasonLabel }}
         <textarea :value="reason" rows="3" maxlength="500" :placeholder="reasonPlaceholder" @input="$emit('update:reason', $event.target.value)" />
       </label>
       <p v-if="error" class="form-message error-state">{{ error }}</p>
       <div class="admin-modal-actions">
-        <button class="secondary-link compact-action" type="button" :disabled="busy" @click="$emit('cancel')">取消</button>
+        <button class="secondary-link compact-action" type="button" :disabled="busy" @click="cancel">取消</button>
         <button class="primary-link compact-action" type="button" :disabled="busy" @click="$emit('confirm')">
           {{ busy ? "处理中..." : confirmLabel }}
         </button>
@@ -19,7 +19,9 @@
 </template>
 
 <script setup>
-defineProps({
+import { nextTick, onUnmounted, ref, useId, watch } from "vue";
+
+const props = defineProps({
   open: { type: Boolean, default: false },
   title: { type: String, default: "确认操作" },
   message: { type: String, default: "" },
@@ -31,7 +33,46 @@ defineProps({
   busy: { type: Boolean, default: false },
   error: { type: String, default: "" },
 });
-defineEmits(["confirm", "cancel", "update:reason"]);
+const emit = defineEmits(["confirm", "cancel", "update:reason"]);
+const modal = ref(null);
+const dialogId = useId();
+let previousFocus;
+
+watch(() => props.open, async (open) => {
+  if (!open) {
+    if (previousFocus?.isConnected) previousFocus.focus();
+    return;
+  }
+  previousFocus = document.activeElement;
+  await nextTick();
+  modal.value?.querySelector("textarea, button:not(:disabled)")?.focus();
+}, { immediate: true });
+
+onUnmounted(() => {
+  if (props.open && previousFocus?.isConnected) previousFocus.focus();
+});
+
+function cancel() {
+  if (!props.busy) emit("cancel");
+}
+
+function handleKeydown(event) {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    cancel();
+  }
+  if (event.key !== "Tab") return;
+  const fields = [...modal.value.querySelectorAll("textarea:not(:disabled), button:not(:disabled)")];
+  const first = fields[0];
+  const last = fields[fields.length - 1];
+  if (!first) { event.preventDefault(); modal.value.focus(); return; }
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault(); last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault(); first.focus();
+  }
+}
 </script>
 
 <style scoped>
