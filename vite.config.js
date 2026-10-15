@@ -1,5 +1,23 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { existsSync, statSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const publicDir = path.join(path.dirname(fileURLToPath(import.meta.url)), "public");
+
+// Resolve /some/dir or /some/dir/ to public/some/dir/index.html when it exists, so
+// standalone pages (404 game, tools, works previews in iframes) are served in dev
+// instead of the SPA fallback. `vite preview` already does this from dist/.
+function publicIndexFor(url) {
+  if (!url || url.includes("..") || path.extname(url)) return "";
+  const relative = url.replace(/^\/+|\/+$/g, "");
+  if (!relative) return "";
+  const candidate = path.join(publicDir, relative, "index.html");
+  return candidate.startsWith(publicDir) && existsSync(candidate) && statSync(candidate).isFile()
+    ? `/${relative}/index.html`
+    : "";
+}
 
 const aiTestPath = "/vibe-coding/ai-personality-test";
 const agentPath = "/vibe-coding/4399123agent";
@@ -28,6 +46,18 @@ function aiTestDevRoute() {
 
         if (url === openclawEasyConfigPath || url === `${openclawEasyConfigPath}/`) {
           req.url = `${openclawEasyConfigPath}/index.html`;
+        }
+
+        const publicIndex = publicIndexFor(url);
+        if (publicIndex) {
+          if (!url.endsWith("/")) {
+            // Keep relative asset URLs (./styles.css) resolving inside the directory.
+            res.statusCode = 301;
+            res.setHeader("Location", `${url}/`);
+            res.end();
+            return;
+          }
+          req.url = publicIndex;
         }
 
         if (url === agentPath) {
