@@ -126,11 +126,6 @@
         </div>
 
         <div class="site-nav-actions">
-          <SystemAnnouncementMenu
-            class="system-announcement-menu--desktop"
-            :unread-count="unreadCount"
-            @count-change="handleNotificationCountChange"
-          />
           <a v-if="!user" class="site-nav-login" :href="loginHref">登入</a>
           <div
             v-else
@@ -152,7 +147,6 @@
               @click="toggleUserMenu"
             >
               <span class="site-nav-account-name">{{ user.username }}</span>
-              <span v-if="unreadCount" class="site-nav-badge">{{ unreadCount }}</span>
               <span class="site-nav-menu-caret" aria-hidden="true">⌄</span>
             </button>
             <div
@@ -163,12 +157,6 @@
               aria-labelledby="site-nav-account-trigger"
             >
               <a class="site-nav-menu-item" href="/account" role="menuitem">用户后台</a>
-              <a class="site-nav-menu-item" href="/community?inbox=1" role="menuitem">
-                消息
-                <span v-if="unreadCount" class="site-nav-badge site-nav-badge--inline">
-                  {{ unreadCount }}
-                </span>
-              </a>
               <a class="site-nav-menu-item" href="/account/settings" role="menuitem">账户设置</a>
               <a class="site-nav-menu-item" href="/help" role="menuitem">帮助中心</a>
               <template v-if="user.isAdmin">
@@ -192,11 +180,6 @@
       </div>
 
       <div class="site-nav-mobile-actions">
-        <SystemAnnouncementMenu
-          class="system-announcement-menu--mobile"
-          :unread-count="unreadCount"
-          @count-change="handleNotificationCountChange"
-        />
         <button
           ref="mobileMenuTrigger"
           class="site-nav-mobile-trigger"
@@ -319,12 +302,6 @@
               <a class="site-nav-drawer-link" href="/account" @click="closeMobileMenu">
                 {{ user.username }} · 用户后台
               </a>
-              <a class="site-nav-drawer-link" href="/community?inbox=1" @click="closeMobileMenu">
-                消息
-                <span v-if="unreadCount" class="site-nav-badge site-nav-badge--inline">
-                  {{ unreadCount }}
-                </span>
-              </a>
               <a class="site-nav-drawer-link" href="/account/settings" @click="closeMobileMenu">
                 账户设置
               </a>
@@ -359,10 +336,8 @@
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { authState, refreshAuth } from "../services/authState";
-import { getCommunityNotifications } from "../services/community";
-import SystemAnnouncementMenu from "./SystemAnnouncementMenu.vue";
 
 const props = defineProps({
   items: {
@@ -385,7 +360,6 @@ const focusableSelector = [
 ].join(",");
 
 const user = computed(() => authState.user);
-const unreadCount = ref(0);
 const isPageScrolled = ref(false);
 const isTutorialsMenuOpen = ref(false);
 const isToolsMenuOpen = ref(false);
@@ -428,15 +402,12 @@ const loginHref = computed(() => {
   return `/login?next=${encodeURIComponent(current)}`;
 });
 
-let notificationTimer = 0;
 let tutorialsMenuCloseTimer = 0;
 let toolsMenuCloseTimer = 0;
 let userMenuCloseTimer = 0;
 let previousBodyOverflow = "";
 let isBodyScrollLockedByNav = false;
 const menuCloseDelay = 260;
-
-watch(user, syncNotificationPolling, { immediate: true });
 
 onMounted(() => {
   loadUser();
@@ -447,7 +418,6 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  if (notificationTimer) window.clearInterval(notificationTimer);
   clearTutorialsMenuCloseTimer();
   clearToolsMenuCloseTimer();
   clearUserMenuCloseTimer();
@@ -494,34 +464,8 @@ async function loadUser() {
   try {
     await refreshAuth();
   } catch {
-    unreadCount.value = 0;
+    // signed-out or network error: the nav falls back to the 登入 link
   }
-}
-
-function syncNotificationPolling(nextUser) {
-  if (notificationTimer) {
-    window.clearInterval(notificationTimer);
-    notificationTimer = 0;
-  }
-  if (!nextUser) {
-    unreadCount.value = 0;
-    return;
-  }
-  loadUnreadCount();
-  notificationTimer = window.setInterval(loadUnreadCount, 45000);
-}
-
-async function loadUnreadCount() {
-  try {
-    const data = await getCommunityNotifications();
-    unreadCount.value = Number(data.unread || 0);
-  } catch {
-    unreadCount.value = 0;
-  }
-}
-
-function handleNotificationCountChange(count) {
-  unreadCount.value = Math.max(0, Number(count) || 0);
 }
 
 function clearTutorialsMenuCloseTimer() {
