@@ -6,8 +6,8 @@
         <h1>提交 Vibe Coding 作品</h1>
       </div>
       <div class="share-section-actions">
-        <a class="secondary-link compact-action" href="/vibe-coding/showcase">查看作品集</a>
-        <a class="secondary-link compact-action" href="/vibe-coding">返回列表</a>
+        <a class="secondary-link compact-action" href="/works">查看作品集</a>
+        <a class="secondary-link compact-action" href="/works">返回列表</a>
       </div>
     </div>
 
@@ -24,7 +24,7 @@
       <div class="composer-head">
         <div>
           <p class="eyebrow">Submission</p>
-          <h2>提交作品</h2>
+          <h2>{{ editSlug ? "修改并重新提交" : "提交作品" }}</h2>
         </div>
         <span>以 {{ user.username }} 身份提交</span>
       </div>
@@ -61,12 +61,36 @@
         <input v-model.trim="form.tags" maxlength="180" placeholder="AI, Vue, 小游戏" />
       </label>
 
+      <div class="composer-grid">
+        <label class="field-label">
+          作品分类
+          <select v-model="form.category">
+            <option v-for="item in workCategories" :key="item.value" :value="item.value">{{ item.label }}</option>
+          </select>
+        </label>
+        <label class="field-label">
+          使用的 AI 工具
+          <input v-model.trim="form.aiTools" maxlength="180" placeholder="Codex, Cursor, Claude" />
+        </label>
+      </div>
+
+      <label class="field-label">
+        详细介绍
+        <textarea v-model.trim="form.description" rows="7" maxlength="8000" placeholder="可选：玩法、实现过程、用到的提示词、踩过的坑。空一行分段。"></textarea>
+      </label>
+
+      <label class="share-form-checkbox">
+        <input v-model="form.embeddable" type="checkbox" />
+        允许在作品页内嵌预览（iframe 沙箱）。如果你的网站禁止被嵌入，请取消勾选。
+      </label>
+
       <label class="field-label">
         补充说明
         <textarea v-model.trim="form.notes" rows="4" maxlength="2000" placeholder="可补充审核备注、使用方式或想获得的反馈。"></textarea>
       </label>
 
-      <div class="attachment-uploader">
+      <p v-if="editSlug && editStatusNote" class="review-note">{{ editStatusNote }}</p>
+      <div v-if="!editSlug" class="attachment-uploader">
         <label class="attachment-trigger">
           <span>{{ coverFile ? coverFile.name : "上传封面图" }}</span>
           <small>JPG、PNG、WebP 或 AVIF，最大 5MB</small>
@@ -77,7 +101,7 @@
         </div>
       </div>
 
-      <div class="attachment-uploader">
+      <div v-if="!editSlug" class="attachment-uploader">
         <label class="attachment-trigger">
           <span>{{ sourceFile ? sourceFile.name : "上传源码 ZIP" }}</span>
           <small>可选，仅支持 .zip，最大 20MB，后端只保存不解压</small>
@@ -97,7 +121,7 @@
         <p v-if="error" class="form-message error-state">{{ error }}</p>
         <p v-else-if="success" class="form-message">{{ success }}</p>
         <button class="primary-link compact-action" type="submit" :disabled="isSubmitting">
-          {{ isSubmitting ? "提交中..." : "提交审核" }}
+          {{ isSubmitting ? "提交中..." : editSlug ? "保存并重新提交审核" : "提交审核" }}
         </button>
       </div>
     </form>
@@ -107,7 +131,9 @@
 <script setup>
 import { onMounted, reactive, ref } from "vue";
 import { refreshAuth } from "../services/authState";
+import { workCategories } from "../data/workCategories";
 import { createVibeCodingSubmission } from "../services/vibeCoding";
+import { getWork, updateWork } from "../services/works";
 import { setPageSeo } from "../utils/seo";
 
 const user = ref(null);
@@ -128,7 +154,13 @@ const form = reactive({
   sourceUrl: "",
   tags: "",
   notes: "",
+  category: "other",
+  aiTools: "",
+  description: "",
+  embeddable: true,
 });
+const editSlug = new URLSearchParams(window.location.search).get("edit") || "";
+const editStatusNote = ref("");
 
 setPageSeo({
   title: "提交 Vibe Coding 作品",
@@ -143,11 +175,38 @@ async function loadUser() {
     user.value = await refreshAuth();
     if (user.value) {
       form.authorName = user.value.username;
+      if (editSlug) await loadEditableWork();
     }
   } catch {
     user.value = null;
   } finally {
     isLoadingUser.value = false;
+  }
+}
+
+async function loadEditableWork() {
+  try {
+    const { work } = await getWork(editSlug);
+    if (!work.canEdit) {
+      error.value = "这个作品当前不能修改（已公开的作品请联系管理员调整）。";
+      return;
+    }
+    Object.assign(form, {
+      projectName: work.title,
+      summary: work.summary,
+      authorName: work.author?.name || form.authorName,
+      projectUrl: work.projectUrl,
+      sourceUrl: work.sourceUrl || "",
+      tags: (work.tags || []).join(", "),
+      notes: work.notes || "",
+      category: work.category || "other",
+      aiTools: (work.aiTools || []).join(", "),
+      description: work.description || "",
+      embeddable: work.embeddable !== false,
+    });
+    editStatusNote.value = work.rejectReason ? `审核意见：${work.rejectReason}` : `当前状态：${work.statusLabel}`;
+  } catch (err) {
+    error.value = err.message || "读取作品失败。";
   }
 }
 
@@ -213,6 +272,19 @@ async function submit() {
     error.value = "源码地址需要以 http:// 或 https:// 开头。";
     return;
   }
+  if (editSlug) {
+    isSubmitting.value = true;
+    try {
+      const { authorName: _authorName, ...payload } = form;
+      await updateWork(editSlug, payload);
+      success.value = "已保存并重新提交审核。";
+    } catch (err) {
+      error.value = err.message || "保存失败。";
+    } finally {
+      isSubmitting.value = false;
+    }
+    return;
+  }
   if (!coverFile.value) {
     error.value = "请上传项目封面图。";
     return;
@@ -237,6 +309,8 @@ async function submit() {
     form.sourceUrl = "";
     form.tags = "";
     form.notes = "";
+    form.description = "";
+    form.aiTools = "";
     coverFile.value = null;
     sourceFile.value = null;
     if (coverPreview.value) URL.revokeObjectURL(coverPreview.value);

@@ -4,6 +4,9 @@ import "./styles.css";
 import "./runway.css";
 import "./minimal-home.css";
 import "./navigation.css";
+import "./works.css";
+import "./works-portal.css";
+import "./community-polish.css";
 import navigationTokens from "./data/navigation-tokens.json";
 
 for (const [name, value] of Object.entries(navigationTokens)) {

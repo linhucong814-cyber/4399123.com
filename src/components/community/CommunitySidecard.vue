@@ -1,5 +1,6 @@
 <template>
   <aside class="community-sidecard" aria-label="社区说明">
+    <WeeklyHotWorks />
     <div v-if="socialSummary.liveSignals.length" class="sidecard-panel live-panel">
       <p class="eyebrow">Live</p>
       <h2>正在发生</h2>
@@ -55,6 +56,7 @@
 </template>
 
 <script setup>
+import WeeklyHotWorks from "../works/WeeklyHotWorks.vue";
 import AuthorAvatar from "./AuthorAvatar.js";
 
 defineProps({

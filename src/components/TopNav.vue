@@ -482,7 +482,7 @@ function isItemActive(item) {
 
 function isPrimaryItemActive(item) {
   if (
-    itemPath(item) === "/vibe-coding" &&
+    itemPath(item) === "/works" &&
     (isTutorialsRoute.value || isToolsRoute.value || isSubmissionRoute.value)
   ) {
     return false;

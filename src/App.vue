@@ -20,24 +20,28 @@
       <UserProfilePage v-else-if="isUserProfileRoute" :user-id="userProfileId" />
       <CommunityPage v-else-if="isCommunityRoute" :post-id="communityPostId" />
       <BlogPage v-else-if="isBlogRoute" :slug="blogSlug" />
-      <VibeCodingShowcasePage
-        v-else-if="isVibeCodingShowcaseRoute"
-        :submissions="vibeCodingSubmissions"
-        :submissions-loading="vibeCodingSubmissionsLoading"
-        :submissions-error="vibeCodingSubmissionsError"
-      />
+      <WorkDetailPage v-else-if="isWorkDetailRoute" :slug="workSlug" />
+      <template v-else-if="isWorksRoute || isVibeCodingShowcaseRoute">
+        <WorksGalleryPage :key="currentPath" />
+        <section class="works-branch-section" aria-labelledby="works-branch-heading">
+          <div class="works-branch-heading">
+            <h2 id="works-branch-heading">官方项目与构建日志</h2>
+            <p>原 Vibe Coding 页面内容：社区投稿、官方项目和构建记录。</p>
+          </div>
+          <VibeCodingPage
+            embedded
+            :projects="vibeCodingProjects"
+            :posts="vibeCodingPosts"
+            :submissions="vibeCodingSubmissions"
+            :submissions-loading="vibeCodingSubmissionsLoading"
+            :submissions-error="vibeCodingSubmissionsError"
+          />
+        </section>
+      </template>
       <VibeCodingSharePage v-else-if="isVibeCodingShareRoute" />
       <PromptLibraryEditorPage v-else-if="isPromptLibraryEditorRoute" :item-id="promptLibraryEditId" />
       <PromptLibraryDetailPage v-else-if="isPromptLibraryDetailRoute" :item-id="promptLibraryItemId" />
       <PromptLibraryPage v-else-if="isPromptLibraryListRoute" />
-      <VibeCodingPage
-        v-else-if="isVibeCodingRoute"
-        :projects="vibeCodingProjects"
-        :posts="vibeCodingPosts"
-        :submissions="vibeCodingSubmissions"
-        :submissions-loading="vibeCodingSubmissionsLoading"
-        :submissions-error="vibeCodingSubmissionsError"
-      />
       <HomePage v-else-if="isHomeRoute" />
       <section v-else class="not-found-page">
         <p class="eyebrow">404</p>
@@ -64,6 +68,7 @@ import {
   vibeCodingProjects as fallbackVibeCodingProjects,
 } from "./data/site";
 import { localBlogPosts } from "./data/content";
+import { workCoverUrl } from "./data/workArtwork";
 import { getApprovedVibeCodingSubmissions, getVibeCodingProjects } from "./services/vibeCoding";
 import { defaultSeo, setPageSeo } from "./utils/seo";
 
@@ -77,7 +82,8 @@ const VibeCodingSharePage = defineAsyncComponent(() => import("./components/Vibe
 const PromptLibraryPage = defineAsyncComponent(() => import("./components/PromptLibraryPage.vue"));
 const PromptLibraryDetailPage = defineAsyncComponent(() => import("./components/PromptLibraryDetailPage.vue"));
 const PromptLibraryEditorPage = defineAsyncComponent(() => import("./components/PromptLibraryEditorPage.vue"));
-const VibeCodingShowcasePage = defineAsyncComponent(() => import("./components/VibeCodingShowcasePage.vue"));
+const WorksGalleryPage = defineAsyncComponent(() => import("./components/works/WorksGalleryPage.vue"));
+const WorkDetailPage = defineAsyncComponent(() => import("./components/works/WorkDetailPage.vue"));
 const AuthFormPage = defineAsyncComponent(() => import("./components/auth/AuthFormPage.vue"));
 const EmailVerifyPage = defineAsyncComponent(() => import("./components/auth/EmailVerifyPage.vue"));
 const PasswordResetRequestPage = defineAsyncComponent(() => import("./components/auth/PasswordResetRequestPage.vue"));
@@ -89,6 +95,14 @@ const AdminUsersPage = defineAsyncComponent(() => import("./components/auth/Admi
 const AdminContentPage = defineAsyncComponent(() => import("./components/auth/AdminContentPage.vue"));
 const AdminAuditLogPage = defineAsyncComponent(() => import("./components/auth/AdminAuditLogPage.vue"));
 const AdminVibeCodingSubmissionsPage = defineAsyncComponent(() => import("./components/auth/AdminVibeCodingSubmissionsPage.vue"));
+
+// Legacy URLs (/vibe-coding, /vibe-coding/showcase) now live at /works (Caddy also 301s them).
+function redirectLegacyRoutes() {
+  if (/^\/vibe-coding(\/showcase)?\/?$/.test(window.location.pathname)) {
+    window.history.replaceState(window.history.state, "", `/works${window.location.search}`);
+  }
+}
+redirectLegacyRoutes();
 
 const currentPath = ref(window.location.pathname);
 const mainContent = ref(null);
@@ -140,16 +154,17 @@ const isCommunityRoute = computed(
 const isBlogRoute = computed(
   () => currentPath.value === "/blog" || currentPath.value.startsWith("/blog/"),
 );
-const isVibeCodingRoute = computed(
-  () =>
-    currentPath.value === "/vibe-coding" ||
-    currentPath.value === "/vibe-coding/",
-);
 const isVibeCodingShowcaseRoute = computed(
   () =>
     currentPath.value === "/vibe-coding/showcase" ||
     currentPath.value === "/vibe-coding/showcase/",
 );
+const isWorksRoute = computed(() => currentPath.value === "/works" || currentPath.value === "/works/");
+const isWorkDetailRoute = computed(() => /^\/works\/[^/]+\/?$/.test(currentPath.value));
+const workSlug = computed(() => {
+  const match = currentPath.value.match(/^\/works\/([^/]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : "";
+});
 const isVibeCodingShareRoute = computed(() => currentPath.value === "/vibe-coding/share" || currentPath.value === "/vibe-coding/share/");
 const isPromptLibraryListRoute = computed(
   () => currentPath.value === "/vibe-coding/prompt-library" || currentPath.value === "/vibe-coding/prompt-library/",
@@ -192,6 +207,7 @@ const userProfileId = computed(() => {
 });
 
 function syncPath() {
+  redirectLegacyRoutes();
   currentPath.value = window.location.pathname;
 }
 
@@ -269,6 +285,8 @@ function isRemovedProject(project) {
 }
 
 function normalizeProject(project) {
+  const image = workCoverUrl(project);
+  if (image !== project.image) project = { ...project, image, imageAlt: project.title };
   if ((project.href || "").replace(/\/?$/, "/") !== "/vibe-coding/404notfound/") {
     return project;
   }
@@ -289,20 +307,11 @@ watchEffect(() => {
     return;
   }
 
-  if (isVibeCodingRoute.value) {
-    setPageSeo({
-      title: "Vibe Coding",
-      description: "4399123 的 AI 小实验、互动工具和快速成型项目入口。",
-      path: "/vibe-coding",
-    });
-    return;
-  }
-
   if (isPromptLibraryListRoute.value || isPromptLibraryDetailRoute.value || isPromptLibraryEditorRoute.value) {
     return;
   }
 
-  if (!isBlogRoute.value && !isLoginRoute.value && !isRegisterRoute.value && !isPasswordResetRequestRoute.value && !isPasswordResetConfirmRoute.value && !isVerifyEmailRoute.value && !isAccountRoute.value && !isAccountSettingsRoute.value && !isAdminRoute.value && !isAdminUsersRoute.value && !isAdminContentRoute.value && !isAdminAuditLogRoute.value && !isAdminVibeCodingSubmissionsRoute.value && !isDocsRoute.value && !isHelpRoute.value && !isUserProfileRoute.value && !isCommunityRoute.value && !isVibeCodingShowcaseRoute.value && !isVibeCodingShareRoute.value) {
+  if (!isBlogRoute.value && !isLoginRoute.value && !isRegisterRoute.value && !isPasswordResetRequestRoute.value && !isPasswordResetConfirmRoute.value && !isVerifyEmailRoute.value && !isAccountRoute.value && !isAccountSettingsRoute.value && !isAdminRoute.value && !isAdminUsersRoute.value && !isAdminContentRoute.value && !isAdminAuditLogRoute.value && !isAdminVibeCodingSubmissionsRoute.value && !isDocsRoute.value && !isHelpRoute.value && !isUserProfileRoute.value && !isCommunityRoute.value && !isVibeCodingShowcaseRoute.value && !isWorksRoute.value && !isWorkDetailRoute.value && !isVibeCodingShareRoute.value) {
     setPageSeo({
       title: "404",
       description: "4399123 暂时没有找到这个入口。",

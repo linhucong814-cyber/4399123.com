@@ -68,7 +68,7 @@
           <div class="panel-title-row">
             <div>
               <p class="eyebrow">Submissions</p>
-              <h3>作品审核进度</h3>
+              <h3>我的作品</h3>
             </div>
             <a class="secondary-link compact-action" href="/vibe-coding/share">提交新作品</a>
           </div>
@@ -84,16 +84,36 @@
             <article v-for="item in submissions" :key="item.id" class="submission-row">
               <div>
                 <span class="status-pill" :class="`status-${item.status}`">{{ statusLabel(item.status) }}</span>
-                <h4>{{ item.projectName }}</h4>
+                <h4>{{ item.title }}</h4>
                 <p>{{ item.summary }}</p>
-                <p v-if="item.reviewNote" class="review-note">审核备注：{{ item.reviewNote }}</p>
+                <p v-if="item.status === 'approved'" class="submission-stats">{{ item.stats.views }} 浏览 · {{ item.stats.likes }} 赞 · {{ item.stats.favorites }} 收藏 · {{ item.stats.comments || 0 }} 评论</p>
               </div>
               <div class="submission-meta">
                 <time :datetime="item.createdAt">{{ formatDate(item.createdAt) }}</time>
-                <a :href="item.projectUrl" target="_blank" rel="noopener noreferrer">打开项目</a>
+                <a :href="`/works/${encodeURIComponent(item.slug)}`">{{ item.status === "approved" ? "查看作品页" : "预览" }}</a>
+                <a v-if="item.canEdit" :href="`/vibe-coding/share?edit=${encodeURIComponent(item.slug)}`">
+                  {{ item.status === "pending" ? "编辑" : "修改并重新提交" }}
+                </a>
               </div>
+              <p v-if="item.rejectReason" class="review-note submission-review-note">
+                <strong>审核意见</strong>{{ item.rejectReason }}
+              </p>
+              <p v-else-if="item.reviewNote" class="review-note submission-review-note">
+                <strong>审核备注</strong>{{ item.reviewNote }}
+              </p>
             </article>
           </div>
+        </section>
+
+        <section class="auth-panel account-card account-favorite-works">
+          <div class="panel-title-row">
+            <h3>我收藏的作品</h3>
+            <a class="secondary-link compact-action" href="/works">去作品页</a>
+          </div>
+          <div v-if="favoriteWorks.length" class="portal-latest-grid">
+            <WorkTile v-for="work in favoriteWorks" :key="work.id" :work="work" :size="72" />
+          </div>
+          <p v-else class="inline-state">还没有收藏作品。在作品页点「收藏」后会出现在这里。</p>
         </section>
 
         <section class="auth-panel account-card">
@@ -151,13 +171,15 @@
 import { computed, onMounted, ref } from "vue";
 import { refreshAuth } from "../../services/authState";
 import { getCommunityNotifications } from "../../services/community";
-import { getMyVibeCodingSubmissions } from "../../services/vibeCoding";
+import { getMyFavoriteWorks, getMyWorks } from "../../services/works";
+import WorkTile from "../works/WorkTile.vue";
 import { setPageSeo } from "../../utils/seo";
 
 const isLoading = ref(true);
 const user = ref(null);
 const dashboardError = ref("");
 const submissions = ref([]);
+const favoriteWorks = ref([]);
 const submissionsLoading = ref(false);
 const submissionsError = ref("");
 const notifications = ref([]);
@@ -196,8 +218,13 @@ async function loadSubmissions() {
   submissionsLoading.value = true;
   submissionsError.value = "";
   try {
-    const data = await getMyVibeCodingSubmissions();
-    submissions.value = Array.isArray(data.submissions) ? data.submissions : [];
+    getMyFavoriteWorks()
+      .then((result) => {
+        favoriteWorks.value = Array.isArray(result.works) ? result.works : [];
+      })
+      .catch(() => {});
+    const data = await getMyWorks();
+    submissions.value = Array.isArray(data.works) ? data.works : [];
   } catch (err) {
     submissionsError.value = err.message || "作品审核进度读取失败。";
   } finally {
@@ -225,7 +252,7 @@ function statusLabel(value) {
     pending: "待审核",
     approved: "已通过",
     rejected: "已拒绝",
-    needs_changes: "标记问题",
+    needs_changes: "需修改",
     deleted: "已删除",
   }[value] || value || "暂无";
 }

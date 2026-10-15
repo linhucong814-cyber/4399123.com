@@ -39,6 +39,26 @@
         </div>
       </header>
 
+      <section class="public-profile-works" aria-labelledby="profile-works-title">
+        <div class="profile-works-head">
+          <h2 id="profile-works-title">作品</h2>
+          <div class="profile-works-tabs" role="tablist" aria-label="作品列表">
+            <button type="button" role="tab" :aria-selected="worksTab === 'works'" :class="{ active: worksTab === 'works' }" @click="worksTab = 'works'">
+              发布的作品 {{ userWorks.length }}
+            </button>
+            <button v-if="!favoritesPrivate" type="button" role="tab" :aria-selected="worksTab === 'favorites'" :class="{ active: worksTab === 'favorites' }" @click="worksTab = 'favorites'">
+              收藏的作品 {{ favoriteWorks.length }}
+            </button>
+          </div>
+        </div>
+        <div v-if="shownWorks.length" class="portal-latest-grid profile-works-grid" role="tabpanel">
+          <WorkTile v-for="work in shownWorks" :key="work.id" :work="work" :size="80" />
+        </div>
+        <p v-else class="profile-activity-empty" role="tabpanel">
+          {{ worksTab === "favorites" ? "还没有收藏作品，去作品页逛逛吧。" : `@${profile.username} 还没有公开作品。` }}
+        </p>
+      </section>
+
       <section class="public-profile-posts" aria-label="用户发布的帖子">
         <div class="section-head public-profile-section-head">
           <div>
@@ -124,7 +144,9 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import WorkTile from "./works/WorkTile.vue";
+import { getUserFavoriteWorks, getUserWorks } from "../services/works";
 import { getCommunityUser, getCommunityUserActivity, getCommunityUserPosts, toggleCommunityUserFollow } from "../services/community";
 import { setPageSeo } from "../utils/seo";
 
@@ -143,6 +165,11 @@ const bookmarksPrivate = ref(true);
 const isLoading = ref(true);
 const error = ref("");
 const followBusy = ref(false);
+const userWorks = ref([]);
+const favoriteWorks = ref([]);
+const favoritesPrivate = ref(true);
+const worksTab = ref(new URLSearchParams(window.location.search).get("tab") === "favorites" ? "favorites" : "works");
+const shownWorks = computed(() => (worksTab.value === "favorites" && !favoritesPrivate.value ? favoriteWorks.value : userWorks.value));
 const avatarPalette = ["#1e6f5c", "#294f8f", "#c84f3a", "#7b5d15", "#5b5fc7", "#20736f"];
 
 onMounted(loadProfile);
@@ -182,6 +209,7 @@ async function loadProfile() {
     if (!profile.value) {
       throw new Error("没有找到这个用户。");
     }
+    loadWorks(props.userId);
     setPageSeo({
       title: `${profile.value.username} 的主页`,
       description: profile.value.bio || `查看 ${profile.value.username} 在 4399123 社区发布的公开帖子。`,
@@ -196,6 +224,17 @@ async function loadProfile() {
   } finally {
     isLoading.value = false;
   }
+}
+
+async function loadWorks(userId) {
+  const [mine, favorites] = await Promise.all([
+    getUserWorks(userId).catch(() => ({ works: [] })),
+    getUserFavoriteWorks(userId).catch(() => ({ private: true, works: [] })),
+  ]);
+  userWorks.value = Array.isArray(mine.works) ? mine.works : [];
+  favoritesPrivate.value = Boolean(favorites.private);
+  favoriteWorks.value = Array.isArray(favorites.works) ? favorites.works : [];
+  if (favoritesPrivate.value) worksTab.value = "works";
 }
 
 async function toggleFollow() {

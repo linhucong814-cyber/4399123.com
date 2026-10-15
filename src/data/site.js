@@ -8,7 +8,7 @@ export const brandDigits = "4399123".split("").map((value, index) => ({
 export const navigationItems = [
   {
     label: "作品",
-    href: "/vibe-coding",
+    href: "/works",
     primary: true,
   },
   {

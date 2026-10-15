@@ -180,10 +180,11 @@ const menuRoot = ref(null);
 const menuTrigger = ref(null);
 let closeTimer = 0;
 
-const systemUnreadCount = computed(
-  () => Number(isAnnouncementUnread.value) + Number(isMailboxAnnouncementUnread.value),
-);
-const badgeCount = computed(() => communityUnread.value + systemUnreadCount.value);
+// The numeric badge mirrors the account inbox (community notifications only) and is
+// hidden for signed-out visitors. Unread site announcements were previously added to
+// this number from localStorage, which showed a "2" to every new or logged-out visitor
+// and disagreed with the account page's "0 messages".
+const badgeCount = computed(() => (authState.user ? communityUnread.value : 0));
 const badgeLabel = computed(() => (badgeCount.value > 99 ? "99+" : String(badgeCount.value)));
 const triggerLabel = computed(() => {
   const unread = badgeCount.value ? `，${badgeLabel.value} 条未读` : "";

@@ -3,7 +3,7 @@
     <div class="section-head vibe-page-head">
       <div>
         <p class="eyebrow">Project Branch</p>
-        <h1>Vibe Coding</h1>
+        <component :is="embedded ? 'h2' : 'h1'">Vibe Coding</component>
       </div>
       <p class="vibe-page-summary">
         从想法到可点击的作品：这里汇集 4399123 的官方项目、社区投稿和构建日志。
@@ -20,7 +20,7 @@
           <p class="vibe-page-summary">
             首栏专门收集用户提交并通过审核的 Vibe Coding 作品，让访客先看到社区里正在发布的新项目。
           </p>
-          <a class="secondary-link compact-action" href="/vibe-coding/showcase">查看全部</a>
+          <a class="secondary-link compact-action" href="/works#works-list">查看全部</a>
           <a class="primary-link compact-action" href="/vibe-coding/share">提交作品</a>
         </div>
       </div>
@@ -31,7 +31,7 @@
       <div v-else class="share-card-grid">
         <article v-for="(item, index) in submissions" :key="item.id" v-reveal="index" class="share-card">
           <a class="share-card-cover" :href="item.projectUrl" target="_blank" rel="noopener noreferrer">
-            <img v-if="item.coverUrl" :src="item.coverUrl" :alt="item.projectName" loading="lazy" decoding="async" />
+            <img v-if="workCoverUrl(item)" :src="workCoverUrl(item)" :alt="item.projectName" loading="lazy" decoding="async" />
           </a>
           <div class="share-card-body">
             <span>by {{ item.authorName }}</span>
@@ -163,8 +163,13 @@
 <script setup>
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import ProjectCard from "./ProjectCard.vue";
+import { workCoverUrl } from "../data/workArtwork";
 
 const props = defineProps({
+  embedded: {
+    type: Boolean,
+    default: false,
+  },
   projects: {
     type: Array,
     required: true,

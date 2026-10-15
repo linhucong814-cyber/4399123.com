@@ -23,7 +23,7 @@
     </p>
 
     <div class="minimal-home__actions">
-      <a class="minimal-home__cta minimal-home__cta--primary" href="/vibe-coding">浏览作品</a>
+      <a class="minimal-home__cta minimal-home__cta--primary" href="/works">浏览作品</a>
       <a class="minimal-home__cta" href="/community">进入社区</a>
       <a class="minimal-home__cta" href="#about">了解 4399123</a>
     </div>
@@ -36,7 +36,7 @@
     <div class="home-latest__col">
       <div class="home-latest__head">
         <h2>最新作品</h2>
-        <a class="home-latest__more" href="/vibe-coding">全部作品 →</a>
+        <a class="home-latest__more" href="/works">全部作品 →</a>
       </div>
       <ul class="home-latest__list">
         <li v-for="project in latestProjects" :key="project.slug">

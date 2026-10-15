@@ -1,3 +1,4 @@
+import { retiredWorkSlugs } from "./retired-works.mjs";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { aboutContent } from "../src/data/about.mjs";
@@ -57,7 +58,7 @@ function appShellHtml(itemsForPage) {
     "    <nav>",
     '      <a href="/blog">最新内容</a>',
     '      <a href="/community">社区</a>',
-    '      <a href="/vibe-coding">Vibe Coding</a>',
+    '      <a href="/works">Vibe Coding</a>',
     '      <a href="/rss.xml">RSS</a>',
     "    </nav>",
     ...itemsForPage.map(
@@ -89,7 +90,7 @@ function aboutShellHtml({ embedded = false } = {}) {
       section.id === "belief" ? '<a href="/vibe-coding/share">分享你的作品</a>' : "",
       '</section>',
     ].join("\n")),
-    '<nav><a href="/vibe-coding">浏览作品</a> <a href="/community">进入社区</a></nav>',
+    '<nav><a href="/works">浏览作品</a> <a href="/community">进入社区</a></nav>',
     '</section>',
   ].join("\n");
 }
@@ -102,7 +103,7 @@ function homeShellHtml(latestItems = []) {
     "    <p>为创造想法而生的 Vibe Coding 社区。</p>",
     `    <p>${escapeHtml(siteDescription)}</p>`,
     "    <nav>",
-    '      <a href="/vibe-coding">浏览作品</a>',
+    '      <a href="/works">浏览作品</a>',
     '      <a href="/community">进入社区</a>',
     '      <a href="/blog">阅读博客</a>',
     '      <a href="#about">了解 4399123</a>',
@@ -267,7 +268,7 @@ await writeRoute(
     links: [
       { href: "/vibe-coding/agent-prompt-template/", label: "Agent 提示词模板生成器" },
       { href: "/vibe-coding/prompt-library/new/", label: "上传提示词" },
-      { href: "/vibe-coding", label: "返回作品" },
+      { href: "/works", label: "返回作品" },
     ],
   }),
 );
@@ -422,31 +423,10 @@ await writeRoute(
   ),
 );
 
+// Legacy URL merged into /works: static fallback redirect (Caddy sends the real 301).
 await writeRoute(
   "/vibe-coding",
-  replaceApp(
-    replaceHead(
-      indexHtml,
-      metaHtml({
-        title: "Vibe Coding",
-        description: "4399123 的 AI 小实验、互动工具和快速成型项目入口。",
-        url: "/vibe-coding",
-        jsonLd: {
-          "@context": "https://schema.org",
-          "@type": "CollectionPage",
-          name: "4399123 Vibe Coding",
-          url: `${siteUrl}/vibe-coding`,
-        },
-      }),
-    ),
-    appShellHtml(
-      items.filter(
-        (item) =>
-          item.category === "projects" ||
-          item.tags?.some((tag) => String(tag).toLowerCase() === "vibe coding"),
-      ),
-    ),
-  ),
+  `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>作品 | 4399123</title><link rel="canonical" href="${siteUrl}/works"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=/works"></head><body><a href="/works">作品页已迁移到 /works</a></body></html>`,
 );
 
 for (const item of items.filter((entry) => entry.category !== "projects")) {
@@ -483,5 +463,75 @@ for (const item of items.filter((entry) => entry.category !== "projects")) {
     ),
   );
 }
+
+// Works gallery + official work pages. User-submitted works are rendered client-side
+// (they live in the Django DB); production can add a server-rendered meta endpoint later.
+const officialWorks = items.filter((entry) => entry.category === "projects" && !retiredWorkSlugs.has(entry.slug));
+await writeRoute(
+  "/works",
+  replaceApp(
+    replaceHead(
+      indexHtml,
+      metaHtml({
+        title: "作品",
+        description: "浏览 4399123 社区的 Vibe Coding 作品：网页工具、小游戏、AI 应用和可视化实验，可按分类、标签筛选，在线体验。",
+        url: "/works",
+        jsonLd: {
+          "@context": "https://schema.org",
+          "@type": "CollectionPage",
+          name: "4399123 作品",
+          url: `${siteUrl}/works`,
+          inLanguage: "zh-CN",
+          hasPart: officialWorks.map((work) => ({ "@type": "CreativeWork", name: work.title, url: `${siteUrl}/works/${work.slug}` })),
+        },
+      }),
+    ),
+    [
+      '<div id="app">',
+      '  <main class="seo-static">',
+      "    <h1>作品</h1>",
+      "    <ul>",
+      ...officialWorks.map((work) => `      <li><a href="/works/${escapeHtml(work.slug)}">${escapeHtml(work.title)}</a> — ${escapeHtml(work.summary || "")}</li>`),
+      "    </ul>",
+      "  </main>",
+      "</div>",
+    ].join("\n"),
+  ),
+);
+
+for (const work of officialWorks) {
+  await writeRoute(
+    `/works/${work.slug}`,
+    replaceApp(
+      replaceHead(
+        indexHtml,
+        metaHtml({
+          title: work.title,
+          description: work.summary,
+          url: `/works/${work.slug}`,
+          image: work.cover,
+          jsonLd: {
+            "@context": "https://schema.org",
+            "@type": "CreativeWork",
+            name: work.title,
+            description: work.summary,
+            url: `${siteUrl}/works/${work.slug}`,
+            image: work.cover ? absoluteUrl(work.cover) : undefined,
+            datePublished: work.date,
+            keywords: (work.tags || []).join(", "),
+            author: { "@type": "Organization", name: "4399123" },
+          },
+        }),
+      ),
+      `<div id="app"><article class="seo-static"><h1>${escapeHtml(work.title)}</h1><p>${escapeHtml(work.summary || "")}</p><a href="${escapeHtml(work.href || `/blog/${work.slug}`)}">打开作品</a></article></div>`,
+    ),
+  );
+}
+
+// Legacy URL: static fallback redirect (Caddy should also send a real 301).
+await writeRoute(
+  "/vibe-coding/showcase",
+  `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>作品 | 4399123</title><link rel="canonical" href="${siteUrl}/works"><meta name="robots" content="noindex"><meta http-equiv="refresh" content="0; url=/works"></head><body><a href="/works">作品页已迁移到 /works</a></body></html>`,
+);
 
 console.log("Generated static route HTML for homepage, account, admin, help, collections and blog posts.");

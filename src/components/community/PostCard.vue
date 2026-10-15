@@ -23,6 +23,7 @@
         <span v-if="shouldShowTitle(post)" class="pc-title">{{ post.title }}</span>
         <span class="pc-excerpt">{{ excerpt(post.body) }}</span>
       </button>
+      <WorkEmbedCard v-if="post.work" :work="post.work" />
       <div class="pc-summary">
         <span>{{ post.replyCount || replyCount(post) }} 回复</span>
         <span>{{ post.viewCount || 0 }} 浏览</span>
@@ -86,6 +87,7 @@
 </template>
 
 <script setup>
+import WorkEmbedCard from "../works/WorkEmbedCard.vue";
 import AuthorAvatar from "./AuthorAvatar.js";
 import {
   attachmentIcon,

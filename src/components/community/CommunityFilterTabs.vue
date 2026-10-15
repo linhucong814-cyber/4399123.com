@@ -52,19 +52,21 @@ defineEmits(["select-sort"]);
 .cft-sort button {
   border: 0;
   background: transparent;
-  color: var(--c-muted);
-  font-family: var(--c-mono);
-  font-size: 12px;
-  padding: 6px 12px;
+  color: var(--c-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 14px;
   border-radius: var(--c-pill);
   cursor: pointer;
   white-space: nowrap;
   transition: color 0.15s, background 0.15s;
 }
+.cft-sort button:hover { background: var(--c-surface); }
 .cft-sort button.on {
-  background: var(--c-surface);
-  color: var(--c-ink);
-  box-shadow: var(--c-shadow-soft);
+  background: var(--c-ink);
+  color: var(--c-surface);
+  box-shadow: none;
 }
 .cft-sort button:focus-visible {
   outline: 2px solid var(--c-green);

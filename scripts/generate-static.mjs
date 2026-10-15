@@ -1,3 +1,4 @@
+import { retiredWorkSlugs } from "./retired-works.mjs";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { absoluteUrl, contentUrl, readContent, siteDescription, siteUrl } from "./content-utils.mjs";
@@ -13,12 +14,15 @@ const publicPaths = [
   { loc: "/", priority: "1.0", changefreq: "weekly" },
   { loc: "/blog", priority: "0.8", changefreq: "weekly" },
   { loc: "/community", priority: "0.8", changefreq: "daily" },
-  { loc: "/vibe-coding", priority: "0.8", changefreq: "weekly" },
+  { loc: "/works", priority: "0.8", changefreq: "daily" },
   { loc: "/docs", priority: "0.7", changefreq: "monthly" },
   { loc: "/vibe-coding/agent-prompt-template/doc/", priority: "0.6", changefreq: "monthly" },
   { loc: "/vibe-coding/prompt-library/", priority: "0.7", changefreq: "weekly" },
   { loc: "/help", priority: "0.5", changefreq: "monthly" },
   { loc: "/404notfound/", priority: "0.2", changefreq: "yearly" },
+  ...items
+    .filter((item) => item.category === "projects" && !retiredWorkSlugs.has(item.slug))
+    .map((item) => ({ loc: `/works/${item.slug}`, priority: "0.6", changefreq: "weekly", lastmod: item.date })),
   ...items.map((item) => ({
     loc: contentUrl(item),
     priority: item.category === "projects" ? "0.7" : "0.6",

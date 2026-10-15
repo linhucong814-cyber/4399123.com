@@ -103,6 +103,8 @@
             </label>
           </div>
 
+          <WorkPicker v-if="isComposerExpanded || linkedWork" v-model="linkedWork" />
+
           <div v-if="isComposerExpanded || attachmentFiles.length" class="attachment-uploader">
             <label class="attachment-trigger">
               <span>添加附件</span>
@@ -761,6 +763,8 @@ import CommunityEmptyState from "./community/CommunityEmptyState.vue";
 import CommunityFilterTabs from "./community/CommunityFilterTabs.vue";
 import CommunityRail from "./community/CommunityRail.vue";
 import CommunitySidecard from "./community/CommunitySidecard.vue";
+import WorkPicker from "./works/WorkPicker.vue";
+import { getWork } from "../services/works";
 import InboxPanel from "./community/InboxPanel.vue";
 import PostCard from "./community/PostCard.vue";
 import { getCurrentUser } from "../services/auth";
@@ -858,6 +862,7 @@ const mentionPicker = reactive({
   requestId: 0,
 });
 const attachmentFiles = ref([]);
+const linkedWork = ref(null);
 const form = reactive({
   channel: "vibe-coding",
   title: "",
@@ -1001,7 +1006,24 @@ onMounted(async () => {
   syncRouteStateFromLocation();
   await Promise.all([loadUser(), loadSocialSummary(), isStandalonePost.value ? loadPostDetail(props.postId) : loadPosts()]);
   if (user.value) await loadNotifications();
+  await prefillLinkedWork();
 });
+
+// /community?compose=1&work=<slug> (from a work page) opens the composer with that work linked.
+async function prefillLinkedWork() {
+  const params = new URLSearchParams(window.location.search);
+  const slug = params.get("work");
+  if (!slug || !user.value) return;
+  try {
+    const data = await getWork(slug);
+    if (data.work && (!data.work.status || data.work.status === "approved")) {
+      linkedWork.value = data.work;
+      if (params.get("compose")) isComposerExpanded.value = true;
+    }
+  } catch {
+    // Unknown or private work: just open the normal composer.
+  }
+}
 
 onUnmounted(() => {
   window.removeEventListener("keydown", handleKeydown);
@@ -1458,6 +1480,7 @@ async function savePost(status) {
   const normalizedBody = form.body.trim();
   const payloadSource = {
     ...form,
+    ...(linkedWork.value ? { workSlug: linkedWork.value.slug } : {}),
     body: normalizedBody,
     title: form.title.trim() || titleFromBody(normalizedBody),
   };
@@ -1493,6 +1516,7 @@ async function savePost(status) {
     openPost(data.post);
     form.title = "";
     form.body = "";
+    linkedWork.value = null;
     attachmentFiles.value = [];
     isComposerExpanded.value = false;
     success.value = status === CommunityPostStatus.DRAFT ? "草稿已保存。" : "发布成功。";
@@ -1538,6 +1562,7 @@ function buildPostPayload(source, status, files = []) {
   payload.set("title", source.title);
   payload.set("body", source.body);
   payload.set("status", status);
+  if (source.workSlug) payload.set("workSlug", source.workSlug);
   for (const file of files) {
     payload.append("attachments", file);
   }

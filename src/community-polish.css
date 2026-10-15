@@ -1,0 +1,19 @@
+/* Community review polish (design-taste-frontend house rules): side-by-side auth actions,
+   a sidebar that stays in view instead of running long. */
+.community-login-panel { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 16px 24px; }
+.community-login-panel .auth-actions { display: flex; flex-direction: row; flex-wrap: nowrap; align-items: center; gap: 10px; margin: 0; }
+.community-login-panel .auth-actions a { margin: 0; white-space: nowrap; }
+@media (max-width: 560px) {
+  .community-login-panel { grid-template-columns: 1fr; }
+}
+@media (min-width: 1081px) {
+  .community-sidecard {
+    position: sticky;
+    top: calc(var(--site-bar-height, 56px) + 16px);
+    align-self: start;
+    max-height: calc(100vh - var(--site-bar-height, 56px) - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+}

@@ -9,7 +9,7 @@
         <component :is="embedded ? 'h2' : 'h1'" id="docs-title" class="docs-hero-title">为了<span>创造想法</span>而生</component>
         <p class="docs-hero-lede">{{ aboutContent.lede }}</p>
         <div class="docs-hero-actions" aria-label="关于 4399123 快捷入口">
-          <a class="docs-primary-action" href="/vibe-coding">浏览作品</a>
+          <a class="docs-primary-action" href="/works">浏览作品</a>
           <a class="docs-text-action" href="/community">进入社区 <span aria-hidden="true">↗</span></a>
         </div>
       </div>
