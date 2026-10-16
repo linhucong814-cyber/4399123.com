@@ -210,6 +210,28 @@ describe("作品详情", () => {
     expect(wrapper.get("iframe").attributes("src")).toBe("https://example.github.io/game/");
   });
 
+  it("shows the original English title as a subtitle and in SEO", async () => {
+    const { setPageSeo } = await import("../../utils/seo");
+    setPageSeo.mockClear();
+    await open({
+      ...baseWork,
+      slug: "neonplex",
+      title: "霓虹矩阵",
+      isThirdParty: true,
+      credit: { authorUrl: "https://github.com/x", license: "MIT", originPostUrl: "", originalTitle: "Neonplex" },
+    });
+    expect(wrapper.get("h1").text()).toBe("霓虹矩阵");
+    expect(wrapper.get(".work-detail-original").text()).toBe("原名 Neonplex");
+    const seo = setPageSeo.mock.calls.at(-1)[0];
+    expect(seo.title).toBe("霓虹矩阵（Neonplex）");
+    expect(seo.jsonLd.alternateName).toBe("Neonplex");
+  });
+
+  it("omits the original-title subtitle for ordinary works", async () => {
+    await open(baseWork);
+    expect(wrapper.find(".work-detail-original").exists()).toBe(false);
+  });
+
   it("shows no credit strip for ordinary works", async () => {
     await open();
     expect(wrapper.find('[data-testid="work-credit"]').exists()).toBe(false);

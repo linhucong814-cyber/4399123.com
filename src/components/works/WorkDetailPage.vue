@@ -16,6 +16,7 @@
       <header class="work-detail-head">
         <div>
           <h1>{{ work.title }}</h1>
+          <p v-if="work.credit?.originalTitle" class="work-detail-original" lang="en">原名 {{ work.credit.originalTitle }}</p>
           <p class="work-detail-summary">{{ work.summary }}</p>
           <p class="work-detail-meta">
             <a :href="`/works?category=${work.category}`">{{ work.categoryLabel }}</a><span v-if="work.isOfficial"> · 官方作品</span><span v-if="work.isThirdParty"> · 第三方开源作品</span><span v-if="work.isFeatured"> · 精选</span>
@@ -227,15 +228,17 @@ async function load() {
 }
 
 function applySeo(item) {
+  const original = item.credit?.originalTitle;
   setPageSeo({
-    title: item.title,
-    description: item.summary,
+    title: original ? `${item.title}（${original}）` : item.title,
+    description: original ? `${item.summary}（原名 ${original}）` : item.summary,
     path: `/works/${item.slug}`,
     image: workCoverUrl(item) || undefined,
     jsonLd: {
       "@context": "https://schema.org",
       "@type": "CreativeWork",
       name: item.title,
+      alternateName: original || undefined,
       description: item.summary,
       url: `https://4399123.com/works/${item.slug}`,
       image: workCoverUrl(item) ? new URL(workCoverUrl(item), "https://4399123.com").toString() : undefined,
