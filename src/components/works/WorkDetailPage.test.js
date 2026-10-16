@@ -153,4 +153,34 @@ describe("作品详情", () => {
     expect(works.adminUpdateWork).toHaveBeenCalledWith("demo", { isFeatured: true });
     expect(wrapper.get(".work-admin-bar button").text()).toBe("取消精选");
   });
+
+  it("credits third-party open-source works with author, license, repo and source post", async () => {
+    await open({
+      ...baseWork,
+      slug: "neonplex",
+      isThirdParty: true,
+      sourceUrl: "https://github.com/VictorZakharov/neonplex",
+      author: { id: 1, name: "Victor Zakharov" },
+      credit: { authorUrl: "https://github.com/VictorZakharov", license: "MIT", originPostUrl: "https://x.com/victor_vibing/status/1" },
+    });
+    const strip = wrapper.get('[data-testid="work-credit"]');
+    expect(strip.text()).toContain("原作者");
+    expect(strip.text()).toContain("开源协议");
+    expect(strip.text()).toContain("MIT");
+    expect(strip.get("a").attributes("href")).toBe("https://github.com/VictorZakharov");
+    expect(wrapper.find('a[href="/users/1"]').exists()).toBe(false);
+    expect(wrapper.get('a[href="https://x.com/victor_vibing/status/1"]').attributes("rel")).toContain("noopener");
+    expect(wrapper.text()).toContain("VictorZakharov/neonplex");
+    expect(wrapper.text()).toContain("第三方开源作品");
+    await wrapper.get(".work-preview-start").trigger("click");
+    const frame = wrapper.get("iframe");
+    expect(frame.attributes("sandbox")).toContain("allow-same-origin");
+    expect(frame.attributes("loading")).toBe("lazy");
+    expect(frame.attributes("allow")).toContain("fullscreen");
+  });
+
+  it("shows no credit strip for ordinary works", async () => {
+    await open();
+    expect(wrapper.find('[data-testid="work-credit"]').exists()).toBe(false);
+  });
 });

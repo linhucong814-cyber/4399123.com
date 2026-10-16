@@ -18,7 +18,7 @@
           <h1>{{ work.title }}</h1>
           <p class="work-detail-summary">{{ work.summary }}</p>
           <p class="work-detail-meta">
-            <a :href="`/works?category=${work.category}`">{{ work.categoryLabel }}</a><span v-if="work.isOfficial"> · 官方作品</span><span v-if="work.isFeatured"> · 精选</span>
+            <a :href="`/works?category=${work.category}`">{{ work.categoryLabel }}</a><span v-if="work.isOfficial"> · 官方作品</span><span v-if="work.isThirdParty"> · 第三方开源作品</span><span v-if="work.isFeatured"> · 精选</span>
           </p>
         </div>
         <div class="work-actions">
@@ -35,7 +35,17 @@
 
       <WorkAdminBar v-if="work.viewer?.isStaff" :work="work" @updated="onAdminUpdated" />
 
-      <WorkPreviewFrame :url="frameUrl" :title="work.title" :cover="workCoverUrl(work)" :embeddable="work.embeddable" />
+      <p v-if="credit" class="work-credit" data-testid="work-credit">
+        <span class="work-credit-label">原作者</span>
+        <a :href="credit.authorUrl" target="_blank" rel="noopener noreferrer">{{ authorName }}</a>
+        <span class="work-credit-sep" aria-hidden="true">/</span>
+        <span class="work-credit-label">开源协议</span>
+        <a v-if="work.sourceUrl" :href="work.sourceUrl" target="_blank" rel="noopener noreferrer">{{ credit.license }}</a>
+        <strong v-else>{{ credit.license }}</strong>
+        <span class="work-credit-note">本站仅收录展示，作品运行在原作者的站点上。</span>
+      </p>
+
+      <WorkPreviewFrame :url="frameUrl" :title="work.title" :cover="workCoverUrl(work)" :embeddable="work.embeddable" :own-origin="Boolean(work.isThirdParty)" />
 
       <div class="work-detail-grid">
         <article class="auth-panel work-description">
@@ -49,8 +59,9 @@
               <template v-else>{{ authorInitial }}</template>
             </span>
             <div>
-              <small>作者</small>
-              <a v-if="work.author?.id && !work.isOfficial" :href="`/users/${work.author.id}`">{{ authorName }}</a>
+              <small>{{ credit ? "原作者" : "作者" }}</small>
+              <a v-if="credit?.authorUrl" :href="credit.authorUrl" target="_blank" rel="noopener noreferrer">{{ authorName }}</a>
+              <a v-else-if="work.author?.id && !work.isOfficial" :href="`/users/${work.author.id}`">{{ authorName }}</a>
               <strong v-else>{{ authorName }}</strong>
             </div>
           </div>
@@ -58,6 +69,18 @@
             <template v-if="work.publishedAt">
               <dt>发布时间</dt>
               <dd><time :datetime="work.publishedAt">{{ formatDate(work.publishedAt) }}</time></dd>
+            </template>
+            <template v-if="credit">
+              <dt>开源协议</dt>
+              <dd>{{ credit.license }}</dd>
+              <template v-if="work.sourceUrl">
+                <dt>GitHub</dt>
+                <dd><a :href="work.sourceUrl" target="_blank" rel="noopener noreferrer">{{ repoLabel }}</a></dd>
+              </template>
+              <template v-if="credit.originPostUrl">
+                <dt>来源帖子</dt>
+                <dd><a :href="credit.originPostUrl" target="_blank" rel="noopener noreferrer">在 X 上查看</a></dd>
+              </template>
             </template>
             <template v-if="work.aiTools?.length">
               <dt>AI 工具</dt>
@@ -138,6 +161,9 @@ const avatarStyle = computed(() => {
   return { "--avatar-bg": AVATAR_COLORS[hash % AVATAR_COLORS.length] };
 });
 const frameUrl = computed(() => previewUrl(work.value));
+// Third-party open-source works carry the original author's credit from the API.
+const credit = computed(() => (work.value?.isThirdParty && work.value.credit?.license ? work.value.credit : null));
+const repoLabel = computed(() => String(work.value?.sourceUrl || "").replace(/^https:\/\/github\.com\//, ""));
 const descriptionBlocks = computed(() =>
   String(work.value?.description || work.value?.summary || "")
     .split(/\n{2,}/)

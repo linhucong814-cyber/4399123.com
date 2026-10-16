@@ -535,3 +535,22 @@
 .works-branch-heading h2 { margin: 0; color: #3f8a17; font-size: 1.15rem; font-weight: 900; }
 .works-branch-heading p { margin: 0; color: #555; font-size: 0.9rem; }
 .works-branch-section .vibe-page { width: 100%; margin-inline: 0; }
+
+/* Third-party open-source credit strip: a flat row in the detail tone, not a card. */
+.work-credit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+  margin: 12px 0 0;
+  padding: 10px 16px;
+  background: var(--pd-row, #f7faf3);
+  border-left: 6px solid #c9a227;
+  color: var(--pd-ink, #1f2a1a);
+  font-size: 0.9375rem;
+}
+.work-credit-label { color: var(--pd-muted, #56614f); font-size: 0.8125rem; font-weight: 700; }
+.work-credit a, .work-credit strong { color: var(--pd-green, #2f6f10); font-weight: 800; }
+.work-credit-sep { color: var(--pd-muted, #56614f); }
+.work-credit-note { flex-basis: 100%; color: var(--pd-muted, #56614f); font-size: 0.8125rem; }
+@media (min-width: 48rem) { .work-credit-note { flex-basis: auto; margin-left: auto; } }

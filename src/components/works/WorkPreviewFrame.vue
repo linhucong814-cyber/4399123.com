@@ -37,6 +37,9 @@ const props = defineProps({
   title: { type: String, default: "" },
   cover: { type: String, default: "" },
   embeddable: { type: Boolean, default: true },
+  // Curated third-party works (site-reviewed, cross-origin demo). Their own origin is kept so
+  // module scripts and localStorage work; being cross-origin they still cannot reach this site.
+  ownOrigin: { type: Boolean, default: false },
 });
 
 // Click-to-load keeps third-party pages from running until the visitor opts in.
@@ -47,7 +50,9 @@ const canEmbed = computed(() => props.embeddable && Boolean(props.url));
 // Same-site official projects (relative URLs) need storage access to work, and are trusted.
 const sandbox = computed(() => {
   const base = "allow-scripts allow-forms allow-popups allow-pointer-lock allow-modals";
-  return props.url.startsWith("/") && !props.url.startsWith("//") ? `${base} allow-same-origin` : base;
+  const sameSite = props.url.startsWith("/") && !props.url.startsWith("//");
+  const crossOriginTrusted = props.ownOrigin && /^https:\/\//.test(props.url);
+  return sameSite || crossOriginTrusted ? `${base} allow-same-origin` : base;
 });
 const displayUrl = computed(() => props.url.replace(/^https?:\/\//, ""));
 </script>
