@@ -179,6 +179,37 @@ describe("作品详情", () => {
     expect(frame.attributes("allow")).toContain("fullscreen");
   });
 
+  it("previews the self-hosted Chinese copy in a strict sandbox and links the English original", async () => {
+    await open({
+      ...baseWork,
+      slug: "neonplex",
+      isThirdParty: true,
+      projectUrl: "https://victorzakharov.github.io/neonplex/",
+      sourceUrl: "https://github.com/VictorZakharov/neonplex",
+      author: { id: 1, name: "Victor Zakharov" },
+      credit: { authorUrl: "https://github.com/VictorZakharov", license: "MIT", originPostUrl: "", playUrl: "/play/neonplex/" },
+    });
+    expect(wrapper.get('[data-testid="work-original-link"]').attributes("href")).toBe("https://victorzakharov.github.io/neonplex/");
+    expect(wrapper.get('.share-card-actions a[href="/play/neonplex/"]').text()).toBe("打开中文版");
+    expect(wrapper.text()).toContain("英文原版");
+    await wrapper.get(".work-preview-start").trigger("click");
+    const frame = wrapper.get("iframe");
+    expect(frame.attributes("src")).toBe("/play/neonplex/");
+    expect(frame.attributes("sandbox")).toContain("allow-scripts");
+    expect(frame.attributes("sandbox")).not.toContain("allow-same-origin");
+  });
+
+  it("ignores a playUrl that is not a /play/<slug>/ path", async () => {
+    await open({
+      ...baseWork,
+      isThirdParty: true,
+      projectUrl: "https://example.github.io/game/",
+      credit: { authorUrl: "https://github.com/x", license: "MIT", originPostUrl: "", playUrl: "https://evil.example/" },
+    });
+    await wrapper.get(".work-preview-start").trigger("click");
+    expect(wrapper.get("iframe").attributes("src")).toBe("https://example.github.io/game/");
+  });
+
   it("shows no credit strip for ordinary works", async () => {
     await open();
     expect(wrapper.find('[data-testid="work-credit"]').exists()).toBe(false);

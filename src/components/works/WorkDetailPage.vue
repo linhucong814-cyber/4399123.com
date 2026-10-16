@@ -42,10 +42,14 @@
         <span class="work-credit-label">开源协议</span>
         <a v-if="work.sourceUrl" :href="work.sourceUrl" target="_blank" rel="noopener noreferrer">{{ credit.license }}</a>
         <strong v-else>{{ credit.license }}</strong>
-        <span class="work-credit-note">本站仅收录展示，作品运行在原作者的站点上。</span>
+        <span v-if="playUrl" class="work-credit-note">
+          本站提供汉化的中文版（按 MIT 协议修改再分发，保留原作者署名），在隔离沙箱中运行。
+          <a :href="work.projectUrl" target="_blank" rel="noopener noreferrer" data-testid="work-original-link">英文原版</a>
+        </span>
+        <span v-else class="work-credit-note">本站仅收录展示，作品运行在原作者的站点上。</span>
       </p>
 
-      <WorkPreviewFrame :url="frameUrl" :title="work.title" :cover="workCoverUrl(work)" :embeddable="work.embeddable" :own-origin="Boolean(work.isThirdParty)" />
+      <WorkPreviewFrame :url="frameUrl" :title="work.title" :cover="workCoverUrl(work)" :embeddable="work.embeddable" :own-origin="Boolean(work.isThirdParty) && !playUrl" />
 
       <div class="work-detail-grid">
         <article class="auth-panel work-description">
@@ -91,7 +95,11 @@
             <a v-for="tag in work.tags" :key="tag" :href="`/works?tag=${encodeURIComponent(tag)}`"><span>{{ tag }}</span></a>
           </div>
           <div class="share-card-actions">
-            <a :href="work.projectUrl" target="_blank" rel="noopener noreferrer">打开项目</a>
+            <template v-if="playUrl">
+              <a :href="playUrl" target="_blank" rel="noopener noreferrer">打开中文版</a>
+              <a :href="work.projectUrl" target="_blank" rel="noopener noreferrer">英文原版</a>
+            </template>
+            <a v-else :href="work.projectUrl" target="_blank" rel="noopener noreferrer">打开项目</a>
             <a v-if="work.sourceUrl" :href="work.sourceUrl" target="_blank" rel="noopener noreferrer">查看源码</a>
           </div>
         </aside>
@@ -160,7 +168,13 @@ const avatarStyle = computed(() => {
   for (const char of authorName.value) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   return { "--avatar-bg": AVATAR_COLORS[hash % AVATAR_COLORS.length] };
 });
-const frameUrl = computed(() => previewUrl(work.value));
+// Third-party games with a self-hosted Chinese copy (/play/<slug>/) preview that copy; the
+// original English demo stays in projectUrl and is linked as 英文原版.
+const playUrl = computed(() => {
+  const url = String(work.value?.isThirdParty ? work.value.credit?.playUrl || "" : "");
+  return /^\/play\/[a-z0-9-]+\/$/.test(url) ? url : "";
+});
+const frameUrl = computed(() => playUrl.value || previewUrl(work.value));
 // Third-party open-source works carry the original author's credit from the API.
 const credit = computed(() => (work.value?.isThirdParty && work.value.credit?.license ? work.value.credit : null));
 const repoLabel = computed(() => String(work.value?.sourceUrl || "").replace(/^https:\/\/github\.com\//, ""));

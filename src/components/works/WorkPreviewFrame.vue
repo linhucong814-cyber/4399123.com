@@ -50,9 +50,17 @@ const canEmbed = computed(() => props.embeddable && Boolean(props.url));
 // Same-site official projects (relative URLs) need storage access to work, and are trusted.
 const sandbox = computed(() => {
   const base = "allow-scripts allow-forms allow-popups allow-pointer-lock allow-modals";
+  // Self-hosted copies of third-party games (/play/<slug>/) live on this origin, so they must
+  // never get allow-same-origin: they run as an opaque origin (the server also sends a CSP
+  // sandbox for /play/*, which covers 新窗口打开 as well).
+  if (isPlayCopy(props.url)) return base;
   const sameSite = props.url.startsWith("/") && !props.url.startsWith("//");
   const crossOriginTrusted = props.ownOrigin && /^https:\/\//.test(props.url);
   return sameSite || crossOriginTrusted ? `${base} allow-same-origin` : base;
 });
-const displayUrl = computed(() => props.url.replace(/^https?:\/\//, ""));
+const displayUrl = computed(() => (isPlayCopy(props.url) ? `4399123.com${props.url}` : props.url.replace(/^https?:\/\//, "")));
+
+function isPlayCopy(url) {
+  return /^\/play\//.test(url);
+}
 </script>
